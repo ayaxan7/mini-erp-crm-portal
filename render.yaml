@@ -1,0 +1,30 @@
+# Render blueprint — backend API service
+# Used via Render dashboard: New -> Blueprint -> select this repo.
+# Provision the PostgreSQL database on Neon first and set DATABASE_URL below/at swap-in.
+
+services:
+  - type: web
+    name: crm-portal-api
+    runtime: node
+    repo: https://github.com/ayaxan7/mini-erp-crm-portal
+    rootDir: backend
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: DATABASE_URL
+        sync: false
+      - key: TEST_DATABASE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+        # Example: https://my-crm-portal.vercel.app

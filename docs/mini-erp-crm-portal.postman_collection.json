@@ -1,0 +1,315 @@
+{
+  "info": {
+    "name": "Mini ERP + CRM Portal",
+    "_postman_id": "c9d83b2c-3f0a-4b6a-8f1e-9a5c2d7e3b11",
+    "description": "Mini ERP + CRM Operations Portal API. After running `Login`, the bearer token is stored automatically in the `token` collection variable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000", "type": "string" },
+    { "key": "token", "value": "", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "  pm.collectionVariables.set('token', json.data.token);",
+                  "  pm.environment.set('token', json.data.token);",
+                  "}",
+                  "pm.test('Login succeeds', () => pm.expect(pm.response.code).to.eql(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@crmportal.dev\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "List customers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/customers?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "type", "value": "", "disabled": true },
+                { "key": "status", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rohit Sharma\",\n  \"mobile\": \"9988776655\",\n  \"businessName\": \"Sharma General Store\",\n  \"type\": \"RETAIL\",\n  \"status\": \"LEAD\",\n  \"followUpDate\": \"2026-08-20\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] }
+          }
+        },
+        {
+          "name": "Get customer by id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/customers/:id", "host": ["{{baseUrl}}"], "path": ["customers", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Update customer",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"ACTIVE\"\n}" },
+            "url": { "raw": "{{baseUrl}}/customers/:id", "host": ["{{baseUrl}}"], "path": ["customers", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Add follow-up",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"notes\": \"Agreed on pricing, will close next week\",\n  \"followUpDate\": \"2026-08-18\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/customers/:id/followups",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", ":id", "followups"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "List follow-ups",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/customers/:id/followups",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", ":id", "followups"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products & Stock",
+      "item": [
+        {
+          "name": "List products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "lowStock", "value": "true", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create product",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Stainless Steel Water Bottle 1L\",\n  \"sku\": \"WB-1000\",\n  \"category\": \"Accessories\",\n  \"unitPrice\": 650,\n  \"currentStock\": 40,\n  \"minStock\": 10,\n  \"location\": \"Rack A-1\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "Get product by id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products/:id", "host": ["{{baseUrl}}"], "path": ["products", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Update product",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"minStock\": 25\n}" },
+            "url": { "raw": "{{baseUrl}}/products/:id", "host": ["{{baseUrl}}"], "path": ["products", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Adjust stock (IN/OUT)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"type\": \"OUT\",\n  \"quantity\": 5,\n  \"reason\": \"Damaged in transit\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/products/:id/stock",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", ":id", "stock"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "Product movement history",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products/:id/movements",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", ":id", "movements"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "All movements",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/stock/movements", "host": ["{{baseUrl}}"], "path": ["stock", "movements"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Challans",
+      "item": [
+        {
+          "name": "List challans",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/challans?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["challans"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "status", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create draft challan",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": 1,\n  \"status\": \"DRAFT\",\n  \"remarks\": \"Deliver by Thursday\",\n  \"items\": [\n    { \"productId\": 1, \"quantity\": 5 }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/challans", "host": ["{{baseUrl}}"], "path": ["challans"] }
+          }
+        },
+        {
+          "name": "Create + confirm challan",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": 1,\n  \"status\": \"CONFIRMED\",\n  \"items\": [\n    { \"productId\": 1, \"quantity\": 3 }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/challans", "host": ["{{baseUrl}}"], "path": ["challans"] }
+          }
+        },
+        {
+          "name": "Get challan by id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/challans/:id", "host": ["{{baseUrl}}"], "path": ["challans", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Confirm challan",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/challans/:id/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["challans", ":id", "confirm"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "Cancel challan",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/challans/:id/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["challans", ":id", "cancel"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard & Health",
+      "item": [
+        {
+          "name": "Dashboard summary",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/dashboard/summary", "host": ["{{baseUrl}}"], "path": ["dashboard", "summary"] }
+          }
+        },
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        }
+      ]
+    }
+  ]
+}
