@@ -1,0 +1,68 @@
+.toolbar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.searchWrap {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+  max-width: 360px;
+}
+
+.searchWrap > svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.searchWrap input {
+  padding-left: 36px;
+  box-shadow: var(--shadow-sm);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 550;
+  cursor: pointer;
+  user-select: none;
+}
+
+.check input {
+  accent-color: var(--color-primary);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.productCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.productName {
+  font-weight: 550;
+}
+
+.low {
+  color: var(--color-danger);
+  font-weight: 650;
+}
+
+.error {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  margin-bottom: 16px;
+}

@@ -1,0 +1,12 @@
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 18px;
+  padding: 4px 0;
+}
+
+.formError {
+  grid-column: 1 / -1;
+  color: var(--color-danger);
+  font-size: 13.5px;
+}

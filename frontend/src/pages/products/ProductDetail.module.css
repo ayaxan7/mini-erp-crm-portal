@@ -1,0 +1,149 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0 0 14px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.back:hover {
+  color: var(--color-primary);
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 4px 0 18px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.titleActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.stockStat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.stockStatLabel {
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+}
+
+.stockStatValue {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.dangerText {
+  color: var(--color-danger);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detailList {
+  margin: 0;
+  padding: 0;
+}
+
+.detailRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.detailRow:first-child {
+  border-top: none;
+}
+
+.detailRow dt {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.detailRow dd {
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.stockForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px 20px;
+}
+
+.stockRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.typeSelect {
+  min-width: 200px;
+}
+
+.qtyField {
+  width: 130px;
+}
+
+.movementsCard {
+  padding-bottom: 12px;
+}
+
+.in {
+  color: var(--color-success);
+  font-weight: 650;
+}
+
+.out {
+  color: var(--color-danger);
+  font-weight: 650;
+}

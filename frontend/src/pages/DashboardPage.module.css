@@ -1,0 +1,181 @@
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 0;
+}
+
+.cardHead h3 {
+  font-size: 15px;
+}
+
+.seeAll {
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.chartCard,
+.recentCard {
+  padding-bottom: 18px;
+}
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  height: 220px;
+  padding: 18px 20px 0;
+}
+
+.barCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.barTrack {
+  width: 100%;
+  max-width: 44px;
+  height: 150px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 6px 6px 2px 2px;
+  background: linear-gradient(180deg, var(--color-primary), var(--color-primary-hover));
+  transition: height 0.4s ease;
+}
+
+.barLabel {
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+}
+
+.barValue {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chartCard > p {
+  padding: 18px 20px;
+}
+
+.recentList {
+  padding: 8px 12px 14px;
+}
+
+.recentRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.12s ease;
+}
+
+.recentRow:hover {
+  background: var(--color-surface-muted);
+  text-decoration: none;
+}
+
+.recentRow > div:first-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.challanMeta {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--color-text);
+  font-weight: 550;
+}
+
+.customer {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recentRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.qty {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.lowStockCard {
+  padding-bottom: 16px;
+}
+
+.lowStockGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  padding: 16px 20px;
+}
+
+.lowRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.lowRow:hover {
+  border-color: var(--color-border-strong);
+  text-decoration: none;
+}
+
+.lowName {
+  font-weight: 550;
+  font-size: 13px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.lowQty {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-danger);
+  flex-shrink: 0;
+}

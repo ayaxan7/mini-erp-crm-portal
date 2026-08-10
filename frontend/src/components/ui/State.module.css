@@ -1,0 +1,98 @@
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 16px;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--color-border-strong);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.skeletonRows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px;
+}
+
+.skeleton {
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, #f0f1f3 25%, #e6e8eb 37%, #f0f1f3 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  padding: 56px 16px;
+}
+
+.state h3 {
+  font-size: 16px;
+}
+
+.state p {
+  max-width: 380px;
+}
+
+.stateIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 8px;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.errorIcon {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.retry {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-weight: 550;
+}
+
+.retry:hover {
+  background: var(--color-surface-muted);
+}

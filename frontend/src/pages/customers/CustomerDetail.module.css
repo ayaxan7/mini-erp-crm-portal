@@ -1,0 +1,161 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0 0 14px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.back:hover {
+  color: var(--color-primary);
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 4px 0 20px;
+  flex-wrap: wrap;
+}
+
+.titleRow h1.title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.titleActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 860px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detailList {
+  display: flex;
+  flex-direction: column;
+}
+
+.detailRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.detailRow:first-of-type {
+  border-top: none;
+}
+
+.detailRow dt {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.detailRow dd {
+  text-align: right;
+  font-size: 13.5px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.link {
+  color: var(--color-primary);
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.followupForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px 20px;
+}
+
+.readOnly {
+  padding: 16px 20px 20px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.timelineCard {
+  padding-bottom: 16px;
+}
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 8px 20px 16px;
+}
+
+.timelineItem {
+  display: flex;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.timelineItem:first-child {
+  border-top: none;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.timelineBody {
+  min-width: 0;
+}
+
+.timelineNote {
+  font-size: 13.5px;
+  color: var(--color-text);
+  white-space: pre-wrap;
+}
+
+.timelineMeta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.noFollowups {
+  padding: 14px 20px 20px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
