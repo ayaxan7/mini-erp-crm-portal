@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { validate } from '../middleware/validate.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
 import { idParamsSchema } from '../validation/common.schema.js';
 import { createChallanSchema, challanListQuerySchema } from '../validation/challan.schema.js';
 import type { ChallanController } from '../controllers/challan.controller.js';
+import type { AuthMiddleware } from './types.js';
 
-export function challanRouter(challanController: ChallanController): Router {
+export function challanRouter(challanController: ChallanController, auth: AuthMiddleware): Router {
+  const { requireAuth, requireRole } = auth;
   const router = Router();
   router.use(requireAuth);
 

@@ -3,23 +3,33 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Field, Input } from '../components/ui/Field';
 import { Button } from '../components/ui/Button';
-import { ApiError } from '../types/api';
+import { friendlyAuthError, isFirebaseConfigured } from '../firebase/client';
 import styles from './LoginPage.module.css';
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { signIn, signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; password?: string }>({});
+
+  const configured = isFirebaseConfigured();
+
+  const go = (to: string) => {
+    const from = (location.state as { from?: string } | null)?.from;
+    navigate(from ?? to, { replace: true });
+  };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
-    const next: { email?: string; password?: string } = {};
+    const next: { name?: string; email?: string; password?: string } = {};
+    if (mode === 'signup' && !name.trim()) next.name = 'Name is required';
     if (!email.trim()) next.email = 'Email is required';
     if (!password) next.password = 'Password is required';
     setFieldErrors(next);
@@ -27,22 +37,27 @@ export function LoginPage() {
 
     setLoading(true);
     try {
-      await login(email.trim(), password);
-      const from = (location.state as { from?: string } | null)?.from;
-      navigate(from ?? '/', { replace: true });
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message || 'Unable to sign in');
-        const byField: { email?: string; password?: string } = {};
-        if (err.errors) {
-          for (const item of err.errors) {
-            byField[item.field as 'email' | 'password'] = item.message;
-          }
-        }
-        setFieldErrors(byField);
+      if (mode === 'signup') {
+        await signUp(name.trim(), email.trim(), password);
       } else {
-        setError('Unexpected error. Please try again.');
+        await signIn(email.trim(), password);
       }
+      go('/');
+    } catch (err) {
+      setError(friendlyAuthError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+      go('/');
+    } catch (err) {
+      setError(friendlyAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -73,10 +88,31 @@ export function LoginPage() {
 
       <div className={styles.formPanel}>
         <div className={styles.formCard}>
-          <h1>Sign in</h1>
-          <p className="text-secondary">Use your work account to access the portal.</p>
+          <h1>{mode === 'signin' ? 'Sign in' : 'Create your account'}</h1>
+          <p className="text-secondary">
+            {mode === 'signin'
+              ? 'Use your work account to access the portal.'
+              : 'New accounts start with view-only access until an admin grants a role.'}
+          </p>
+
+          {!configured && (
+            <div className={styles.configError} role="alert">
+              Firebase is not configured. Add the VITE_FIREBASE_* environment variables and restart the dev server.
+            </div>
+          )}
 
           <form onSubmit={submit} noValidate>
+            {mode === 'signup' && (
+              <Field label="Full name" required error={fieldErrors.name}>
+                <Input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Jane Smith"
+                  autoComplete="name"
+                  invalid={Boolean(fieldErrors.name)}
+                />
+              </Field>
+            )}
             <Field label="Work email" required error={fieldErrors.email}>
               <Input
                 type="email"
@@ -92,27 +128,45 @@ export function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
+                placeholder={mode === 'signup' ? 'At least 6 characters' : '••••••••'}
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 invalid={Boolean(fieldErrors.password)}
               />
             </Field>
 
             {error && <div className={styles.formError} role="alert">{error}</div>}
 
-            <Button type="submit" size="lg" loading={loading} className="w-full">
-              Sign in
+            <Button type="submit" size="lg" loading={loading} className="w-full" disabled={!configured}>
+              {mode === 'signin' ? 'Sign in' : 'Create account'}
             </Button>
           </form>
 
-          <div className={styles.demoBox}>
-            <p className={styles.demoTitle}>Demo accounts</p>
-            <div className={styles.demoRows}>
-              <span><b>Admin</b> — admin@crmportal.dev</span>
-              <span><b>Sales</b> — sales@crmportal.dev</span>
-              <span><b>Warehouse</b> — warehouse@crmportal.dev</span>
-              <span><b>Accounts</b> — accounts@crmportal.dev</span>
-            </div>
+          <div className={styles.divider}><span>or</span></div>
+
+          <Button type="button" variant="secondary" size="lg" onClick={() => void handleGoogle()} disabled={!configured || loading} className="w-full">
+            Continue with Google
+          </Button>
+
+          <div className={styles.switchRow}>
+            {mode === 'signin' ? (
+              <p>
+                New to the portal?{' '}
+                <button type="button" className={styles.switchLink} onClick={() => { setMode('signup'); setError(null); }}>
+                  Create an account
+                </button>
+              </p>
+            ) : (
+              <p>
+                Already have an account?{' '}
+                <button type="button" className={styles.switchLink} onClick={() => { setMode('signin'); setError(null); }}>
+                  Sign in
+                </button>
+              </p>
+            )}
+          </div>
+
+          <div className={styles.notice}>
+            Need a role? Ask an admin to grant you access to <b>Sales</b>, <b>Warehouse</b> or <b>Admin</b>.
           </div>
         </div>
       </div>

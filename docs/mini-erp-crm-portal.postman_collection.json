@@ -2,7 +2,7 @@
   "info": {
     "name": "Mini ERP + CRM Portal",
     "_postman_id": "c9d83b2c-3f0a-4b6a-8f1e-9a5c2d7e3b11",
-    "description": "Mini ERP + CRM Operations Portal API. After running `Login`, the bearer token is stored automatically in the `token` collection variable.",
+    "description": "Mini ERP + CRM Operations Portal API. Paste your Firebase ID token into the `token` collection variable (Frontend DevTools → grab the Authorization header, or see docs/deployment.md). No /auth/login is required — Firebase handles sign-in.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -20,38 +20,42 @@
       "name": "Auth",
       "item": [
         {
-          "name": "Login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.data && json.data.token) {",
-                  "  pm.collectionVariables.set('token', json.data.token);",
-                  "  pm.environment.set('token', json.data.token);",
-                  "}",
-                  "pm.test('Login succeeds', () => pm.expect(pm.response.code).to.eql(200));"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@crmportal.dev\",\n  \"password\": \"Admin@123\"\n}"
-            },
-            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
-          }
-        },
-        {
           "name": "Me",
           "request": {
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        },
+        {
+          "name": "List users (admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/users?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update user role (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"SALES\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/users/:id/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "users", ":id", "role"],
+              "variable": [{ "key": "id", "value": "2" }]
+            }
           }
         }
       ]

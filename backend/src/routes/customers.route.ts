@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { validate } from '../middleware/validate.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
 import { idParamsSchema } from '../validation/common.schema.js';
 import {
   createCustomerSchema,
@@ -9,8 +8,10 @@ import {
   customerListQuerySchema,
 } from '../validation/customer.schema.js';
 import type { CustomerController } from '../controllers/customer.controller.js';
+import type { AuthMiddleware } from './types.js';
 
-export function customerRouter(customerController: CustomerController): Router {
+export function customerRouter(customerController: CustomerController, auth: AuthMiddleware): Router {
+  const { requireAuth, requireRole } = auth;
   const router = Router();
   router.use(requireAuth);
 

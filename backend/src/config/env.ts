@@ -12,9 +12,11 @@ export interface Env {
   nodeEnv: NodeEnv;
   port: number;
   databaseUrl: string;
-  jwtSecret: string;
-  jwtExpiresIn: string;
   frontendUrl: string;
+  firebaseProjectId?: string;
+  firebaseClientEmail?: string;
+  firebasePrivateKey?: string;
+  firebaseConfigPath?: string;
 }
 
 function required(name: string, value: string | undefined): string {
@@ -33,9 +35,11 @@ const env: Env = {
     nodeEnv === 'test'
       ? process.env.TEST_DATABASE_URL || 'postgres://localhost:5432/crm_test'
       : required('DATABASE_URL', process.env.DATABASE_URL || 'postgres://localhost:5432/crm_dev'),
-  jwtSecret: required('JWT_SECRET', process.env.JWT_SECRET),
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  firebaseProjectId: process.env.FIREBASE_PROJECT_ID || undefined,
+  firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL || undefined,
+  firebasePrivateKey: process.env.FIREBASE_PRIVATE_KEY || undefined,
+  firebaseConfigPath: process.env.FIREBASE_CREDENTIALS_PATH || undefined,
 };
 
 export default env;
