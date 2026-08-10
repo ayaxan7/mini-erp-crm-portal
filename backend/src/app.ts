@@ -1,17 +1,60 @@
 import express, { type Application } from 'express';
 import cors from 'cors';
 import env from './config/env.js';
-import authRoutes from './routes/auth.js';
-import customerRoutes from './routes/customers.js';
-import productRoutes from './routes/products.js';
-import stockRoutes from './routes/stock.js';
-import challanRoutes from './routes/challans.js';
-import dashboardRoutes from './routes/dashboard.js';
+import { pool } from './config/db.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
-export function createApp(): Application {
-  const app = express();
+import { UserRepository } from './repositories/user.repo.js';
+import { CustomerRepository } from './repositories/customer.repo.js';
+import { ProductRepository } from './repositories/product.repo.js';
+import { StockRepository } from './repositories/stock.repo.js';
+import { ChallanRepository } from './repositories/challan.repo.js';
+import { DashboardRepository } from './repositories/dashboard.repo.js';
 
+import { AuthService } from './services/auth.service.js';
+import { CustomerService } from './services/customer.service.js';
+import { ProductService } from './services/product.service.js';
+import { StockService } from './services/stock.service.js';
+import { ChallanService } from './services/challan.service.js';
+import { DashboardService } from './services/dashboard.service.js';
+
+import { AuthController } from './controllers/auth.controller.js';
+import { CustomerController } from './controllers/customer.controller.js';
+import { ProductController } from './controllers/product.controller.js';
+import { StockController } from './controllers/stock.controller.js';
+import { ChallanController } from './controllers/challan.controller.js';
+import { DashboardController } from './controllers/dashboard.controller.js';
+
+import { authRouter } from './routes/auth.route.js';
+import { customerRouter } from './routes/customers.route.js';
+import { productRouter } from './routes/products.route.js';
+import { stockRouter } from './routes/stock.route.js';
+import { challanRouter } from './routes/challans.route.js';
+import { dashboardRouter } from './routes/dashboard.route.js';
+
+export function createApp(): Application {
+  const userRepo = new UserRepository(pool);
+  const customerRepo = new CustomerRepository(pool);
+  const productRepo = new ProductRepository(pool);
+  const stockRepo = new StockRepository(pool);
+  const challanRepo = new ChallanRepository(pool);
+  const dashboardRepo = new DashboardRepository(pool);
+
+  const authService = new AuthService(userRepo);
+  const customerService = new CustomerService(customerRepo);
+  const productService = new ProductService(productRepo);
+  const stockService = new StockService(productRepo, stockRepo);
+  const challanService = new ChallanService(challanRepo, productRepo, stockRepo, customerRepo);
+  const dashboardService = new DashboardService(dashboardRepo);
+
+  const authController = new AuthController(authService);
+  const customerController = new CustomerController(customerService);
+  const productController = new ProductController(productService, stockService);
+  const stockController = new StockController(stockService);
+  const challanController = new ChallanController(challanService);
+  const dashboardController = new DashboardController(dashboardService);
+
+  const app = express();
   app.set('trust proxy', 1);
 
   const allowedOrigins = env.frontendUrl
@@ -19,24 +62,19 @@ export function createApp(): Application {
     .map((origin: string) => origin.trim())
     .filter(Boolean);
 
-  app.use(
-    cors({
-      origin: allowedOrigins,
-      credentials: false,
-    }),
-  );
+  app.use(cors({ origin: allowedOrigins }));
   app.use(express.json({ limit: '1mb' }));
 
   app.get('/health', (_req, res) => {
     res.json({ success: true, message: 'OK' });
   });
 
-  app.use('/auth', authRoutes);
-  app.use('/customers', customerRoutes);
-  app.use('/products', productRoutes);
-  app.use('/stock', stockRoutes);
-  app.use('/challans', challanRoutes);
-  app.use('/dashboard', dashboardRoutes);
+  app.use('/auth', authRouter(authController));
+  app.use('/customers', customerRouter(customerController));
+  app.use('/products', productRouter(productController));
+  app.use('/stock', stockRouter(stockController));
+  app.use('/challans', challanRouter(challanController));
+  app.use('/dashboard', dashboardRouter(dashboardController));
 
   app.use(notFoundHandler);
   app.use(errorHandler);

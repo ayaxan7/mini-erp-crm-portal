@@ -1,5 +1,3 @@
-import type { Request } from 'express';
-
 export type Role = 'ADMIN' | 'SALES' | 'WAREHOUSE' | 'ACCOUNTS';
 
 export interface AuthUser {
@@ -13,6 +11,9 @@ declare global {
   namespace Express {
     interface Request {
       user?: AuthUser;
+      validatedBody?: unknown;
+      validatedQuery?: unknown;
+      validatedParams?: unknown;
     }
   }
 }
@@ -33,14 +34,7 @@ export interface PaginatedResult<T> {
   };
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  errors?: { field: string; message: string }[];
-}
-
-export function parsePagination(query: Request['query']): Pagination {
+export function parsePagination(query: Record<string, unknown>): Pagination {
   const rawPage = Number(query.page) || 1;
   const rawLimit = Number(query.limit) || 10;
   const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;

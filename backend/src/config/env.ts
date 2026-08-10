@@ -28,11 +28,11 @@ const nodeEnv = (process.env.NODE_ENV as NodeEnv) || 'development';
 
 const env: Env = {
   nodeEnv,
-  port: Number(process.env.PORT) || 5000,
-  databaseUrl: required(
-    'DATABASE_URL',
-    process.env.DATABASE_URL ?? (nodeEnv === 'test' ? undefined : process.env.DATABASE_URL || 'postgres://localhost:5432/crm_dev'),
-  ),
+  port: Number(process.env.PORT) || 4000,
+  databaseUrl:
+    nodeEnv === 'test'
+      ? process.env.TEST_DATABASE_URL || 'postgres://localhost:5432/crm_test'
+      : required('DATABASE_URL', process.env.DATABASE_URL || 'postgres://localhost:5432/crm_dev'),
   jwtSecret: required('JWT_SECRET', process.env.JWT_SECRET),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',

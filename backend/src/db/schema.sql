@@ -74,9 +74,10 @@ CREATE TABLE IF NOT EXISTS products (
   location      VARCHAR(150),
   created_by    INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT uq_products_sku UNIQUE (lower(sku))
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_products_sku ON products (lower(sku));
 
 CREATE INDEX IF NOT EXISTS idx_products_name     ON products (lower(name));
 CREATE INDEX IF NOT EXISTS idx_products_category ON products (lower(category));
