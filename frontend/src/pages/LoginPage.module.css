@@ -103,6 +103,36 @@
   gap: 16px;
 }
 
+.passwordWrap {
+  position: relative;
+}
+
+.passwordInput {
+  padding-right: 42px;
+}
+
+.toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.toggle:hover {
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
 .formError {
   padding: 10px 12px;
   border-radius: var(--radius-sm);

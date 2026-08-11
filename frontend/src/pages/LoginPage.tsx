@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Field, Input } from '../components/ui/Field';
 import { Button } from '../components/ui/Button';
 import { ApiError } from '../types/api';
+import { EyeIcon, EyeSlashIcon } from '../components/ui/Icons';
 import styles from './LoginPage.module.css';
 
 export function LoginPage() {
@@ -12,6 +13,7 @@ export function LoginPage() {
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
@@ -88,14 +90,25 @@ export function LoginPage() {
               />
             </Field>
             <Field label="Password" required error={fieldErrors.password}>
-              <Input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                invalid={Boolean(fieldErrors.password)}
-              />
+              <div className={styles.passwordWrap}>
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  invalid={Boolean(fieldErrors.password)}
+                  className={styles.passwordInput}
+                />
+                <button
+                  type="button"
+                  className={styles.toggle}
+                  onClick={() => setShowPassword((value) => !value)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                </button>
+              </div>
             </Field>
 
             {error && <div className={styles.formError} role="alert">{error}</div>}
