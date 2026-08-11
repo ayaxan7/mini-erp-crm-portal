@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import pg from 'pg';
 import env from '../config/env.js';
-import { pool } from '../config/db.js';
+import { pool, sslConfig } from '../config/db.js';
 import { seedAll } from './seed.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -18,6 +18,7 @@ async function ensureDatabase(): Promise<void> {
     user: url.username || undefined,
     password: url.password || undefined,
     database: 'postgres',
+    ssl: sslConfig(env.databaseUrl),
   });
   try {
     await maintenance.connect();
@@ -35,7 +36,7 @@ async function ensureDatabase(): Promise<void> {
 }
 
 export async function applySchema(truncateFirst: boolean): Promise<void> {
-  const client = new pg.Client({ connectionString: env.databaseUrl });
+  const client = new pg.Client({ connectionString: env.databaseUrl, ssl: sslConfig(env.databaseUrl) });
   await client.connect();
   try {
     if (truncateFirst) {

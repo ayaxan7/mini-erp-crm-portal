@@ -7,8 +7,16 @@ export interface Queryable {
 
 pg.types.setTypeParser(pg.types.builtins.DATE, (value: string) => value);
 
+const SSL_MODES = new Set(['require', 'prefer', 'verify-ca', 'verify-full']);
+
+export function sslConfig(connectionString: string): { rejectUnauthorized: boolean } | undefined {
+  const sslmode = new URL(connectionString).searchParams.get('sslmode');
+  return sslmode && SSL_MODES.has(sslmode) ? { rejectUnauthorized: false } : undefined;
+}
+
 export const pool = new pg.Pool({
   connectionString: env.databaseUrl,
+  ssl: sslConfig(env.databaseUrl),
   max: env.nodeEnv === 'test' ? 5 : 10,
 });
 
