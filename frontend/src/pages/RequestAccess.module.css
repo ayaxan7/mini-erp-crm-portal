@@ -1,0 +1,14 @@
+.note {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-top: 12px;
+}
+
+.formError {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 13px;
+}

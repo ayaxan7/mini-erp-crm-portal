@@ -73,6 +73,8 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .header {

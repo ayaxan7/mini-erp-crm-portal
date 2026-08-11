@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Badge, statusTone } from '../ui/Badge';
-import { LogOutIcon, GridIcon, UsersIcon, BoxIcon, DocumentIcon } from '../ui/Icons';
+import { LogOutIcon, GridIcon, UsersIcon, BoxIcon, DocumentIcon, KeyIcon } from '../ui/Icons';
 import styles from './AppShell.module.css';
 
 export function AppShell() {
@@ -18,6 +18,10 @@ export function AppShell() {
     { to: '/products', label: 'Products', icon: <BoxIcon /> },
     { to: '/challans', label: 'Challans', icon: <DocumentIcon /> },
   ];
+
+  if (user.role === 'ADMIN') {
+    navItems.push({ to: '/access-requests', label: 'Access requests', icon: <KeyIcon /> });
+  }
 
   const handleLogout = () => {
     logout();

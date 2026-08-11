@@ -43,6 +43,12 @@ export function DocumentIcon(props: IconProps) {
   </svg>;
 }
 
+export function KeyIcon(props: IconProps) {
+  return <svg {...base(props)}>
+    <circle cx="8" cy="15" r="4" /><path d="m10.85 12.15 9-9" /><path d="M17.5 4.5l2 2" /><path d="M15 7l2 2" />
+  </svg>;
+}
+
 export function TrendIcon(props: IconProps) {
   return <svg {...base(props)}>
     <path d="M22 7l-8.5 8.5-5-5L2 17" /><path d="M16 7h6v6" />

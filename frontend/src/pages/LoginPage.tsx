@@ -5,6 +5,7 @@ import { Field, Input } from '../components/ui/Field';
 import { Button } from '../components/ui/Button';
 import { ApiError } from '../types/api';
 import { EyeIcon, EyeSlashIcon } from '../components/ui/Icons';
+import { RequestAccessModal } from './RequestAccessModal';
 import styles from './LoginPage.module.css';
 
 export function LoginPage() {
@@ -17,6 +18,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [requestOpen, setRequestOpen] = useState(false);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -110,6 +112,10 @@ export function LoginPage() {
                 </button>
               </div>
             </Field>
+            <p className={styles.passwordHint}>
+              <strong>Password tips:</strong> at least 8 characters with upper &amp; lower case letters, a number, and a
+              special character.
+            </p>
 
             {error && <div className={styles.formError} role="alert">{error}</div>}
 
@@ -127,8 +133,17 @@ export function LoginPage() {
               <span><b>Accounts</b> — accounts@crmportal.dev</span>
             </div>
           </div>
+
+          <div className={styles.requestBox}>
+            <p>Don&apos;t have an account? Request access to the portal.</p>
+            <Button variant="secondary" size="sm" onClick={() => setRequestOpen(true)}>
+              Request access
+            </Button>
+          </div>
         </div>
       </div>
+
+      <RequestAccessModal open={requestOpen} onClose={() => setRequestOpen(false)} onSubmitted={() => setRequestOpen(false)} />
     </div>
   );
 }

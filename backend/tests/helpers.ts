@@ -27,7 +27,7 @@ beforeAll(async () => {
 });
 
 export async function resetDb(): Promise<{ products: { id: number; sku: string; current_stock: number }[]; customerId: number }> {
-  await pool.query('TRUNCATE challan_items, challans, customer_followups, customers, stock_movements, products RESTART IDENTITY CASCADE');
+  await pool.query('TRUNCATE access_requests, users, challan_items, challans, customer_followups, customers, stock_movements, products RESTART IDENTITY CASCADE');
   await seedUsers();
 
   const { rows: products } = await pool.query(

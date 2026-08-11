@@ -6,6 +6,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { S3ImageStorage, LocalImageStorage, isS3Configured, UPLOADS_DIR } from './services/storage.service.js';
 
 import { UserRepository } from './repositories/user.repo.js';
+import { AccessRequestRepository } from './repositories/access-request.repo.js';
 import { CustomerRepository } from './repositories/customer.repo.js';
 import { ProductRepository } from './repositories/product.repo.js';
 import { StockRepository } from './repositories/stock.repo.js';
@@ -13,6 +14,7 @@ import { ChallanRepository } from './repositories/challan.repo.js';
 import { DashboardRepository } from './repositories/dashboard.repo.js';
 
 import { AuthService } from './services/auth.service.js';
+import { AccessRequestService } from './services/access-request.service.js';
 import { CustomerService } from './services/customer.service.js';
 import { ProductService } from './services/product.service.js';
 import { StockService } from './services/stock.service.js';
@@ -21,6 +23,7 @@ import { DashboardService } from './services/dashboard.service.js';
 import { InvoiceService } from './services/invoice.service.js';
 
 import { AuthController } from './controllers/auth.controller.js';
+import { AccessRequestController } from './controllers/access-request.controller.js';
 import { CustomerController } from './controllers/customer.controller.js';
 import { ProductController } from './controllers/product.controller.js';
 import { StockController } from './controllers/stock.controller.js';
@@ -36,6 +39,7 @@ import { dashboardRouter } from './routes/dashboard.route.js';
 
 export function createApp(): Application {
   const userRepo = new UserRepository(pool);
+  const accessRequestRepo = new AccessRequestRepository(pool);
   const customerRepo = new CustomerRepository(pool);
   const productRepo = new ProductRepository(pool);
   const stockRepo = new StockRepository(pool);
@@ -43,6 +47,7 @@ export function createApp(): Application {
   const dashboardRepo = new DashboardRepository(pool);
 
   const authService = new AuthService(userRepo);
+  const accessRequestService = new AccessRequestService(accessRequestRepo, userRepo);
   const customerService = new CustomerService(customerRepo);
   const imageStorage = isS3Configured(env)
     ? new S3ImageStorage(env.s3Bucket!, env.awsRegion!, env.awsAccessKeyId!, env.awsSecretAccessKey!)
@@ -54,6 +59,7 @@ export function createApp(): Application {
   const dashboardService = new DashboardService(dashboardRepo);
 
   const authController = new AuthController(authService);
+  const accessRequestController = new AccessRequestController(accessRequestService);
   const customerController = new CustomerController(customerService);
   const productController = new ProductController(productService, stockService);
   const stockController = new StockController(stockService);
@@ -76,7 +82,7 @@ export function createApp(): Application {
     res.json({ success: true, message: 'OK' });
   });
 
-  app.use('/auth', authRouter(authController));
+  app.use('/auth', authRouter(authController, accessRequestController));
   app.use('/customers', customerRouter(customerController));
   app.use('/products', productRouter(productController));
   app.use('/stock', stockRouter(stockController));

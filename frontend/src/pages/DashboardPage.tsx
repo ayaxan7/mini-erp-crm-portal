@@ -7,7 +7,7 @@ import { StatCard, Card, PageHeader } from '../components/ui/Card';
 import { StatusBadge } from '../components/ui/Badge';
 import { Spinner, ErrorState } from '../components/ui/State';
 import { BoxIcon, UsersIcon, AlertIcon, DocumentIcon, BadgeDollarIcon } from '../components/ui/Icons';
-import { formatMoney } from '../utils/format';
+import { formatMoneyCompact } from '../utils/format';
 import styles from './DashboardPage.module.css';
 
 export function DashboardPage() {
@@ -16,15 +16,37 @@ export function DashboardPage() {
 
   useEffect(() => {
     let cancelled = false;
-    api.get<DashboardSummary>('/dashboard/summary')
-      .then((res) => {
-        if (!cancelled) setSummary(res.data!);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) setError(err instanceof ApiError ? err.message : 'Failed to load dashboard');
-      });
+
+    const load = () => {
+      setError(null);
+      api.get<DashboardSummary>('/dashboard/summary')
+        .then((res) => {
+          if (!cancelled) setSummary(res.data!);
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) setError(err instanceof ApiError ? err.message : 'Failed to load dashboard');
+        });
+    };
+
+    load();
+
+    const onFocus = () => load();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') load();
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) load();
+    };
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pageshow', onPageShow);
+
     return () => {
       cancelled = true;
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pageshow', onPageShow);
     };
   }, []);
 
@@ -50,7 +72,7 @@ export function DashboardPage() {
         <StatCard label="Low stock items" value={summary.products.lowStock} icon={<AlertIcon />} tone="danger" />
         <StatCard
           label="Stock value"
-          value={formatMoney(summary.products.stockValue)}
+          value={formatMoneyCompact(summary.products.stockValue)}
           icon={<BadgeDollarIcon />}
           tone="success"
         />

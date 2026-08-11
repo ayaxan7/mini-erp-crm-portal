@@ -7,6 +7,24 @@ export interface User {
   role: Role;
 }
 
+export const REQUESTABLE_ROLES: Role[] = ['SALES', 'WAREHOUSE', 'ACCOUNTS'];
+
+export type AccessRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface AccessRequest {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  message: string | null;
+  status: AccessRequestStatus;
+  review_note: string | null;
+  reviewed_by: number | null;
+  reviewed_at: string | null;
+  created_at: string;
+  reviewer_name: string | null;
+}
+
 export type CustomerType = 'RETAIL' | 'WHOLESALE' | 'DISTRIBUTOR';
 export type CustomerStatus = 'LEAD' | 'ACTIVE' | 'INACTIVE';
 

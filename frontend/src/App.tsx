@@ -12,6 +12,7 @@ import { ProductDetailPage } from './pages/products/ProductDetailPage';
 import { ChallansPage } from './pages/challans/ChallansPage';
 import { ChallanCreatePage } from './pages/challans/ChallanCreatePage';
 import { ChallanDetailPage } from './pages/challans/ChallanDetailPage';
+import { AccessRequestsPage } from './pages/admin/AccessRequestsPage';
 
 function NotFound() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
               />
               <Route path="challans/new" element={<RequireRole roles={['ADMIN', 'SALES']}><ChallanCreatePage /></RequireRole>} />
               <Route path="challans/:id" element={<ChallanDetailPage />} />
+              <Route path="access-requests" element={<RequireRole roles={['ADMIN']}><AccessRequestsPage /></RequireRole>} />
               <Route path="*" element={<NotFound />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

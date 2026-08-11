@@ -111,6 +111,21 @@
   padding-right: 42px;
 }
 
+.passwordHint {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.passwordHint strong {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
 .toggle {
   position: absolute;
   right: 6px;
@@ -146,6 +161,27 @@
   margin-top: 28px;
   padding-top: 20px;
   border-top: 1px dashed var(--color-border-strong);
+}
+
+.requestBox {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.requestBox p {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.requestBox button {
+  flex-shrink: 0;
 }
 
 .demoTitle {

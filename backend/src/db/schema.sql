@@ -17,6 +17,34 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- access_requests (self-service account requests reviewed by ADMIN)
+DO $$
+BEGIN
+  CREATE TYPE access_request_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS access_requests (
+  id           SERIAL PRIMARY KEY,
+  name         VARCHAR(120) NOT NULL,
+  email        VARCHAR(255) NOT NULL,
+  role         user_role NOT NULL,
+  message      TEXT,
+  status       access_request_status NOT NULL DEFAULT 'PENDING',
+  review_note  TEXT,
+  reviewed_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at  TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE access_requests ADD COLUMN IF NOT EXISTS review_note TEXT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_access_requests_pending_email
+  ON access_requests (lower(email)) WHERE status = 'PENDING';
+
+CREATE INDEX IF NOT EXISTS idx_access_requests_status ON access_requests (status, created_at DESC);
+
 -- customers
 CREATE TABLE IF NOT EXISTS customers (
   id            SERIAL PRIMARY KEY,

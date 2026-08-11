@@ -19,6 +19,13 @@ export const STATUS_TONES: Record<string, Tone> = {
   RETAIL: 'info',
   WHOLESALE: 'primary',
   DISTRIBUTOR: 'warning',
+  PENDING: 'warning',
+  APPROVED: 'success',
+  REJECTED: 'danger',
+  ADMIN: 'primary',
+  SALES: 'info',
+  WAREHOUSE: 'neutral',
+  ACCOUNTS: 'warning',
 };
 
 export function statusTone(value: string): Tone {
