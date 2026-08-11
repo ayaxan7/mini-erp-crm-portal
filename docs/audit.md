@@ -9,10 +9,9 @@ Legend: ✅ implemented & verified · ⚠️ implemented, manual step needed to 
 
 | # | Requirement | Status | Evidence / location |
 | --- | --- | --- | --- |
-| 1 | Role-based auth, 4 roles | ✅ | `backend/src/middleware/auth.ts`, `src/db/schema.sql` (`user_role` enum); first user→`ADMIN`, others→`ACCOUNTS`; `LoginPage`, `AuthContext.can` (ADMIN bypasses) |
+| 1 | Role-based auth, 4 roles | ✅ | `backend/src/middleware/auth.ts`, `src/db/seed.ts`; `LoginPage`, `AuthContext.can` (ADMIN bypasses) |
 | 2 | Server-side role checks on all writes | ✅ | `requireRole` on every POST/PATCH route; `tests/roles.test.ts` (403s) |
-| 3a | User management (admin grants roles) | ✅ | `GET /auth/users`, `PATCH /auth/users/:id/role` (ADMIN-only, self-change blocked), Users page in app |
-| 3 | Firebase Auth login + session restore + logout | ✅ | Firebase email/password + Google sign-in; backend verifies ID token via Admin SDK; `GET /auth/me` auto-provisions; token in `localStorage`, 401 → `crm:unauthorized` → `/login` |
+| 3 | JWT login + session restore + logout | ✅ | `POST /auth/login`, `GET /auth/me`; token in `localStorage`, 401 → `crm:unauthorized` → `/login` |
 | 4 | Customer CRUD | ✅ | `/customers` GET/POST/PATCH; `tests/customers.test.ts` |
 | 5 | Customer search + filters + pagination | ✅ | `/customers?search&type&status&page&limit`; UI toolbar, `DataTable`+`Pagination` |
 | 6 | Follow-up scheduling + history | ✅ | `customer_followups` table; detail-page timeline; field `follow_up_date` |
@@ -40,30 +39,25 @@ Legend: ✅ implemented & verified · ⚠️ implemented, manual step needed to 
 | No ORM; `schema.sql` is source of truth | ✅ |
 | No mocked mandatory features — all real Postgres | ✅ |
 | Minimal comments | ✅ |
-| Tests | ✅ 57/57 in 6 files |
+| Tests | ✅ 54/54 in 6 files |
 | Typecheck + production build clean (both apps) | ✅ |
 | Git: module-per-commit pushes to `main` | ✅ (`8ee68db`, `7965c7f` …) |
 | `.env` / secrets excluded | ✅ |
 
 ## Verification snapshots
 
-- `npm run test` (backend) → **6 files, 57/57 passed**. Run 2026-08-10 on the Firebase-auth commit.
-- `npm run build` → backend `tsc` ok; frontend `vite build` ok.
-- Firebase flow covered by injected `FakeTokenVerifier` in tests (no real Firebase in CI).
-- E2E via Vite proxy (5173 → 4000): sign-in, dashboard summary, customers list,
-  challan create + cancel, Users-role grant round-trip correctly.
+- `npm run test` (backend) → **6 files, 54/54 passed**. Run 2026-08-10 on the latest commit.
+- `npm run build` → backend `tsc` ok; frontend `vite build` ok (72 modules).
+- E2E via Vite proxy (5173 → 4000): login, dashboard summary, customers list,
+  challan create + cancel all round-trip correctly.
 
 ## Go-live steps (deployment)
 
-1. **Firebase**: enable Email/Password (+ Google) in Authentication; create web app;
-   generate service-account key; add Vercel + localhost to Google Authorized domains.
-2. **Neon**: create project, grab pooled connection string.
+1. **Neon**: create project, grab pooled connection string.
    - Run seeds once: `cd backend && DATABASE_URL=<neon> npm run db:setup`.
-3. **Render**: import repo via `render.yaml` blueprint; set env vars (`DATABASE_URL`,
-   `TEST_DATABASE_URL`, `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`,
-   `FIREBASE_PRIVATE_KEY`, `FRONTEND_URL`) → deploy; health = `/health`.
-4. **Vercel**: import repo root dir `frontend`; set `VITE_API_URL`, `VITE_FIREBASE_*`
-   web-config vars.
-5. First user to sign in becomes `ADMIN` — grant teammate roles from the Users page.
+2. **Render**: import repo via `render.yaml` blueprint; set env vars (`DATABASE_URL`,
+   `TEST_DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`) → deploy; health = `/health`.
+3. **Vercel**: import repo root dir `frontend`; set `VITE_API_URL` = Render URL.
+4. Seed passwords are demo defaults — rotate before a public launch.
 
 Full detail: `docs/deployment.md`.

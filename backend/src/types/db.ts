@@ -2,9 +2,9 @@ import type pg from 'pg';
 
 export interface UserRow {
   id: number;
-  firebase_uid: string;
   name: string;
   email: string;
+  password_hash: string;
   role: 'ADMIN' | 'SALES' | 'WAREHOUSE' | 'ACCOUNTS';
   created_at: Date | string;
   updated_at: Date | string;

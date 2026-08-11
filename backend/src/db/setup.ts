@@ -25,8 +25,10 @@ async function ensureDatabase(): Promise<void> {
     const safeName = /^[a-zA-Z0-9_]+$/.test(dbName) ? dbName : '';
     if (res.rowCount === 0 && safeName) {
       await maintenance.query(`CREATE DATABASE ${safeName}`);
+      // eslint-disable-next-line no-console
       console.log(`Created database "${dbName}"`);
     } else {
+      // eslint-disable-next-line no-console
       console.log(`Database "${dbName}" already exists`);
     }
   } finally {
@@ -40,9 +42,11 @@ export async function applySchema(truncateFirst: boolean): Promise<void> {
   try {
     if (truncateFirst) {
       await client.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
+      // eslint-disable-next-line no-console
       console.log('Dropped & recreated public schema');
     }
     await client.query(SCHEMA_SQL);
+    // eslint-disable-next-line no-console
     console.log('Schema applied');
   } finally {
     await client.end();
@@ -52,6 +56,7 @@ export async function applySchema(truncateFirst: boolean): Promise<void> {
 export async function resetAll(): Promise<void> {
   await applySchema(true);
   await seedAll();
+  // eslint-disable-next-line no-console
   console.log('Database seeded');
 }
 
@@ -62,6 +67,7 @@ async function main(): Promise<void> {
   if (seedOnly) {
     await ensureDatabase();
     await seedAll();
+    // eslint-disable-next-line no-console
     console.log('Seed data applied');
     await pool.end();
     return;
@@ -70,12 +76,14 @@ async function main(): Promise<void> {
   await ensureDatabase();
   await applySchema(reset);
   await seedAll();
+  // eslint-disable-next-line no-console
   console.log('Setup complete.');
   await pool.end();
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {
+    // eslint-disable-next-line no-console
     console.error('Setup failed:', err);
     process.exit(1);
   });

@@ -2,22 +2,10 @@ import { beforeAll } from 'vitest';
 import request, { type Test } from 'supertest';
 import { pool } from '../src/config/db.js';
 import { createApp } from '../src/app.js';
+import { seedUsers } from '../src/db/seed.js';
 import type { Role } from '../src/types/index.js';
-import type { AuthTokenVerifier } from '../src/services/firebaseVerifier.js';
 
-class FakeTokenVerifier implements AuthTokenVerifier {
-  async verifyToken(token: string) {
-    try {
-      const payload = JSON.parse(Buffer.from(token, 'base64').toString('utf-8')) as { uid?: string; email?: string; name?: string };
-      if (!payload.uid) return null;
-      return { uid: payload.uid, email: payload.email ?? null, name: payload.name ?? null };
-    } catch {
-      return null;
-    }
-  }
-}
-
-export const app = createApp({ tokenVerifier: new FakeTokenVerifier() });
+export const app = createApp();
 
 export interface ApiClient {
   get: (path: string) => Test;
@@ -27,30 +15,20 @@ export interface ApiClient {
   delete: (path: string) => Test;
 }
 
-export const TEST_IDENTITY: Record<Role, { uid: string; name: string; email: string }> = {
-  ADMIN: { uid: 'fb-admin-1', name: 'Admin', email: 'admin@test.local' },
-  SALES: { uid: 'fb-sales-1', name: 'Sales', email: 'sales@test.local' },
-  WAREHOUSE: { uid: 'fb-warehouse-1', name: 'Warehouse', email: 'warehouse@test.local' },
-  ACCOUNTS: { uid: 'fb-accounts-1', name: 'Accounts', email: 'accounts@test.local' },
+const CREDENTIALS: Record<Role, { email: string; password: string }> = {
+  ADMIN: { email: 'admin@crmportal.dev', password: 'Admin@123' },
+  SALES: { email: 'sales@crmportal.dev', password: 'Sales@123' },
+  WAREHOUSE: { email: 'warehouse@crmportal.dev', password: 'Warehouse@123' },
+  ACCOUNTS: { email: 'accounts@crmportal.dev', password: 'Accounts@123' },
 };
 
 beforeAll(async () => {
   await resetDb();
 });
 
-export function tokenFor(identity: { uid: string; email?: string; name?: string }): string {
-  return Buffer.from(JSON.stringify(identity)).toString('base64');
-}
-
 export async function resetDb(): Promise<{ products: { id: number; sku: string; current_stock: number }[]; customerId: number }> {
-  await pool.query('TRUNCATE users RESTART IDENTITY CASCADE');
-
-  for (const [role, identity] of Object.entries(TEST_IDENTITY)) {
-    await pool.query(
-      `INSERT INTO users (firebase_uid, name, email, role) VALUES ($1, $2, $3, $4::user_role)`,
-      [identity.uid, identity.name, identity.email, role as Role],
-    );
-  }
+  await pool.query('TRUNCATE challan_items, challans, customer_followups, customers, stock_movements, products RESTART IDENTITY CASCADE');
+  await seedUsers();
 
   const { rows: products } = await pool.query(
     `INSERT INTO products (name, sku, unit_price, current_stock, min_stock) VALUES
@@ -63,7 +41,7 @@ export async function resetDb(): Promise<{ products: { id: number; sku: string; 
 
   const { rows: customers } = await pool.query(
     `INSERT INTO customers (name, mobile, type, status, created_by)
-     VALUES ('Test Customer', '9876543210', 'RETAIL', 'ACTIVE', (SELECT id FROM users WHERE firebase_uid = 'fb-admin-1'))
+     VALUES ('Test Customer', '9876543210', 'RETAIL', 'ACTIVE', (SELECT id FROM users WHERE email = 'admin@crmportal.dev'))
      RETURNING id`,
   );
 
@@ -71,7 +49,12 @@ export async function resetDb(): Promise<{ products: { id: number; sku: string; 
 }
 
 export async function loginAs(role: Role): Promise<string> {
-  return tokenFor(TEST_IDENTITY[role]);
+  const { email, password } = CREDENTIALS[role];
+  const res = await request(app).post('/auth/login').send({ email, password });
+  if (res.status !== 200 || !res.body.data?.token) {
+    throw new Error(`Login failed for ${role}: ${JSON.stringify(res.body)}`);
+  }
+  return res.body.data.token;
 }
 
 export async function auth(role: Role): Promise<ApiClient> {

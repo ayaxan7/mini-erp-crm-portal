@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import { validate } from '../middleware/validate.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 import { idParamsSchema } from '../validation/common.schema.js';
 import { createProductSchema, updateProductSchema, productListQuerySchema, stockMovementSchema } from '../validation/product.schema.js';
 import { stockMovementListQuerySchema } from '../validation/challan.schema.js';
 import type { ProductController } from '../controllers/product.controller.js';
-import type { AuthMiddleware } from './types.js';
 
-export function productRouter(productController: ProductController, auth: AuthMiddleware): Router {
-  const { requireAuth, requireRole } = auth;
+export function productRouter(productController: ProductController): Router {
   const router = Router();
   router.use(requireAuth);
 

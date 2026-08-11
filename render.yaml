@@ -17,15 +17,14 @@ services:
         value: production
       - key: PORT
         value: 4000
-      - key: FIREBASE_PROJECT_ID
-        sync: false
-      - key: FIREBASE_CLIENT_EMAIL
-        sync: false
-      - key: FIREBASE_PRIVATE_KEY
-        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 8h
       - key: DATABASE_URL
         sync: false
       - key: TEST_DATABASE_URL
         sync: false
       - key: FRONTEND_URL
         sync: false
+        # Example: https://my-crm-portal.vercel.app

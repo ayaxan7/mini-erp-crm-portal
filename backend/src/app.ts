@@ -3,7 +3,6 @@ import cors from 'cors';
 import env from './config/env.js';
 import { pool } from './config/db.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
-import { createAuthMiddleware } from './middleware/auth.js';
 
 import { UserRepository } from './repositories/user.repo.js';
 import { CustomerRepository } from './repositories/customer.repo.js';
@@ -13,7 +12,6 @@ import { ChallanRepository } from './repositories/challan.repo.js';
 import { DashboardRepository } from './repositories/dashboard.repo.js';
 
 import { AuthService } from './services/auth.service.js';
-import { FirebaseTokenVerifier, type AuthTokenVerifier } from './services/firebaseVerifier.js';
 import { CustomerService } from './services/customer.service.js';
 import { ProductService } from './services/product.service.js';
 import { StockService } from './services/stock.service.js';
@@ -34,11 +32,7 @@ import { stockRouter } from './routes/stock.route.js';
 import { challanRouter } from './routes/challans.route.js';
 import { dashboardRouter } from './routes/dashboard.route.js';
 
-interface CreateAppOptions {
-  tokenVerifier?: AuthTokenVerifier;
-}
-
-export function createApp({ tokenVerifier }: CreateAppOptions = {}): Application {
+export function createApp(): Application {
   const userRepo = new UserRepository(pool);
   const customerRepo = new CustomerRepository(pool);
   const productRepo = new ProductRepository(pool);
@@ -46,8 +40,7 @@ export function createApp({ tokenVerifier }: CreateAppOptions = {}): Application
   const challanRepo = new ChallanRepository(pool);
   const dashboardRepo = new DashboardRepository(pool);
 
-  const authService = new AuthService(userRepo, tokenVerifier ?? new FirebaseTokenVerifier());
-  const authMiddleware = createAuthMiddleware(authService);
+  const authService = new AuthService(userRepo);
   const customerService = new CustomerService(customerRepo);
   const productService = new ProductService(productRepo);
   const stockService = new StockService(productRepo, stockRepo);
@@ -76,12 +69,12 @@ export function createApp({ tokenVerifier }: CreateAppOptions = {}): Application
     res.json({ success: true, message: 'OK' });
   });
 
-  app.use('/auth', authRouter(authController, authMiddleware));
-  app.use('/customers', customerRouter(customerController, authMiddleware));
-  app.use('/products', productRouter(productController, authMiddleware));
-  app.use('/stock', stockRouter(stockController, authMiddleware));
-  app.use('/challans', challanRouter(challanController, authMiddleware));
-  app.use('/dashboard', dashboardRouter(dashboardController, authMiddleware));
+  app.use('/auth', authRouter(authController));
+  app.use('/customers', customerRouter(customerController));
+  app.use('/products', productRouter(productController));
+  app.use('/stock', stockRouter(stockController));
+  app.use('/challans', challanRouter(challanController));
+  app.use('/dashboard', dashboardRouter(dashboardController));
 
   app.use(notFoundHandler);
   app.use(errorHandler);

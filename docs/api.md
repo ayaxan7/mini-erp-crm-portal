@@ -2,10 +2,10 @@
 
 Base URL (local): `http://localhost:4000`
 
-All endpoints except `/health` require a Firebase ID token:
+All endpoints except `/auth/login` and `/health` require:
 
 ```
-Authorization: Bearer <firebase-id-token>
+Authorization: Bearer <token>
 ```
 
 ## Response envelope
@@ -39,43 +39,31 @@ List endpoints wrap results in `data` (array) + `meta`:
 
 ## Auth
 
-Auth is handled by **Firebase Auth** — there is no `/auth/login`. The frontend signs
-the user in (email/password or Google) and sends the ID token on every request. The
-backend verifies it via the Admin SDK, auto-provisions unknown users (first user →
-`ADMIN`, everyone else → view-only `ACCOUNTS`), and admins grant roles via the
-endpoints below.
+### `POST /auth/login`
 
-### `GET /auth/me`
+Body:
 
-Returns the current user, provisioning it on first call:
+```json
+{ "email": "admin@crmportal.dev", "password": "Admin@123" }
+```
+
+200:
 
 ```json
 {
   "success": true,
-  "data": { "id": 1, "name": "Admin User", "email": "admin@acme.com", "role": "ADMIN" }
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": { "id": 1, "name": "Admin User", "email": "admin@crmportal.dev", "role": "ADMIN" }
+  }
 }
 ```
 
-`401` if the token is missing, invalid or expired.
+`401` on invalid credentials.
 
-### `GET /auth/users` — _ADMIN_
+### `GET /auth/me`
 
-Lists portal users. Query params: `page` (default 1), `limit` (default 10, max 100), `search` (name/email, case-insensitive).
-
-200 → `{ success, data: [ { id, name, email, role, created_at } ], meta }`.
-
-### `PATCH /auth/users/:id/role` — _ADMIN_
-
-Body: `role*` (`ADMIN|SALES|WAREHOUSE|ACCOUNTS`).
-
-```json
-{ "role": "SALES" }
-```
-
-- `403` if the caller is not an admin (enforced server-side).
-- `409` if `:id` is your own user — you cannot change your own role.
-
-200 → the updated user.
+Returns the current `user` (same shape) or `401`.
 
 ---
 ## Customers

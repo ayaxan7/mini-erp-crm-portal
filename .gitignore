@@ -29,6 +29,3 @@ coverage/
 # Vercel / Render local artifacts
 .vercel/
 .output/
-
-# Secrets
-backend/.firebase/

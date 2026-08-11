@@ -1,5 +1,32 @@
+import bcrypt from 'bcryptjs';
 import type { QueryResultRow } from 'pg';
 import { pool } from '../config/db.js';
+
+interface SeedUser {
+  name: string;
+  email: string;
+  password: string;
+  role: 'ADMIN' | 'SALES' | 'WAREHOUSE' | 'ACCOUNTS';
+}
+
+export const SEED_USERS: SeedUser[] = [
+  { name: 'Admin User', email: 'admin@crmportal.dev', password: 'Admin@123', role: 'ADMIN' },
+  { name: 'Ravi Kumar', email: 'sales@crmportal.dev', password: 'Sales@123', role: 'SALES' },
+  { name: 'Manoj Shah', email: 'warehouse@crmportal.dev', password: 'Warehouse@123', role: 'WAREHOUSE' },
+  { name: 'Priya Nair', email: 'accounts@crmportal.dev', password: 'Accounts@123', role: 'ACCOUNTS' },
+];
+
+export async function seedUsers(): Promise<void> {
+  for (const u of SEED_USERS) {
+    const hash = await bcrypt.hash(u.password, 10);
+    await pool.query(
+      `INSERT INTO users (name, email, password_hash, role)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (email) DO NOTHING`,
+      [u.name, u.email, hash, u.role],
+    );
+  }
+}
 
 export async function seedCustomers(count: { rows: QueryResultRow[] } | undefined): Promise<void> {
   const sample = [
@@ -15,13 +42,14 @@ export async function seedCustomers(count: { rows: QueryResultRow[] } | undefine
 
   for (const [name, mobile, email, businessName, gstNumber, type, address, status] of sample) {
     await pool.query(
-      `INSERT INTO customers (name, mobile, email, business_name, gst_number, type, address, status)
-       VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, ''), $6::customer_type, $7, $8::customer_status)
+      `INSERT INTO customers (name, mobile, email, business_name, gst_number, type, address, status, created_by)
+       VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, ''), $6::customer_type, $7, $8::customer_status, (SELECT id FROM users WHERE email = 'admin@crmportal.dev'))
        ON CONFLICT DO NOTHING`,
       [name, mobile, email, businessName, gstNumber, type, address, status],
     );
   }
   if (count?.rows && count.rows.length === 0) {
+    // Seed sample products only when the customers table was empty to stay idempotent.
     await seedProducts();
   }
 }
@@ -40,21 +68,26 @@ export async function seedProducts(): Promise<void> {
 
   for (const [name, sku, category, unitPrice, currentStock, minStock, location] of products) {
     await pool.query(
-      `INSERT INTO products (name, sku, category, unit_price, current_stock, min_stock, location)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO products (name, sku, category, unit_price, current_stock, min_stock, location, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, (SELECT id FROM users WHERE email = 'warehouse@crmportal.dev'))
        ON CONFLICT ((lower(sku))) DO NOTHING`,
       [name, sku, category, unitPrice, currentStock, minStock, location],
     );
   }
 
+  const adminId = await pool.query(`SELECT id FROM users WHERE email = 'admin@crmportal.dev'`);
+  const admin = adminId.rows[0].id as number;
+
   await pool.query(
-    `INSERT INTO stock_movements (product_id, quantity_changed, movement_type, reason, created_by)
-     SELECT id, current_stock, 'IN', 'Opening stock', NULL FROM products
+    `INSERT INTO stock_movements (product_id, quantity_changed, movement_type, reason, reference_type, reference_id, created_by)
+     SELECT id, current_stock, 'IN', 'Opening stock', NULL, NULL, $1 FROM products
      WHERE NOT EXISTS (SELECT 1 FROM stock_movements)`,
+    [admin],
   );
 }
 
 export async function seedAll(): Promise<void> {
+  await seedUsers();
   const existing = await pool.query('SELECT id FROM customers LIMIT 1');
   await seedCustomers(existing.rows.length ? undefined : existing);
   const products = await pool.query('SELECT id FROM products LIMIT 1');

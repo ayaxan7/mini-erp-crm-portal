@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Badge, statusTone } from '../ui/Badge';
-import { ShieldIcon } from '../ui/Icons';
 import { LogOutIcon, GridIcon, UsersIcon, BoxIcon, DocumentIcon } from '../ui/Icons';
 import styles from './AppShell.module.css';
 
 export function AppShell() {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -18,11 +17,10 @@ export function AppShell() {
     { to: '/customers', label: 'Customers', icon: <UsersIcon /> },
     { to: '/products', label: 'Products', icon: <BoxIcon /> },
     { to: '/challans', label: 'Challans', icon: <DocumentIcon /> },
-    ...(user.role === 'ADMIN' ? [{ to: '/users', label: 'Users', icon: <ShieldIcon /> }] : []),
   ];
 
   const handleLogout = () => {
-    void signOut();
+    logout();
     navigate('/login');
   };
 

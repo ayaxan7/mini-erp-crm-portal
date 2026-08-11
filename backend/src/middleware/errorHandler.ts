@@ -6,6 +6,7 @@ export function notFoundHandler(_req: Request, res: Response): void {
   res.status(404).json({ success: false, message: 'Route not found' });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
   if (isApiError(err)) {
     res.status(err.status).json({ success: false, message: err.message, errors: err.details });
@@ -22,6 +23,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return;
   }
 
+  // eslint-disable-next-line no-console
   console.error('[UnhandledError]', err);
   const message = env.nodeEnv === 'production' ? 'Internal server error' : String((err as Error)?.message || err);
   res.status(500).json({ success: false, message });

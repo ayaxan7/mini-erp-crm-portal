@@ -7,16 +7,6 @@ export interface User {
   role: Role;
 }
 
-export interface AppUser {
-  id: number;
-  name: string;
-  email: string;
-  role: Role;
-  created_at: string;
-}
-
-export const ROLE_OPTIONS: Role[] = ['ADMIN', 'SALES', 'WAREHOUSE', 'ACCOUNTS'];
-
 export type CustomerType = 'RETAIL' | 'WHOLESALE' | 'DISTRIBUTOR';
 export type CustomerStatus = 'LEAD' | 'ACTIVE' | 'INACTIVE';
 

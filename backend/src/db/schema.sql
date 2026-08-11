@@ -1,4 +1,6 @@
--- Mini ERP + CRM Operations Portal schema
+-- ============================================================================
+-- Mini ERP + CRM Operations Portal — PostgreSQL Schema
+-- ============================================================================
 
 CREATE TYPE user_role AS ENUM ('ADMIN', 'SALES', 'WAREHOUSE', 'ACCOUNTS');
 CREATE TYPE customer_type AS ENUM ('RETAIL', 'WHOLESALE', 'DISTRIBUTOR');
@@ -6,20 +8,22 @@ CREATE TYPE customer_status AS ENUM ('LEAD', 'ACTIVE', 'INACTIVE');
 CREATE TYPE movement_type AS ENUM ('IN', 'OUT');
 CREATE TYPE challan_status AS ENUM ('DRAFT', 'CONFIRMED', 'CANCELLED');
 
--- users: Firebase UID key, local role granted by an admin after provisioning
+-- ----------------------------------------------------------------------------
+-- users
+-- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
   id            SERIAL PRIMARY KEY,
-  firebase_uid  VARCHAR(128) NOT NULL UNIQUE,
   name          VARCHAR(120) NOT NULL,
-  email         VARCHAR(255) NOT NULL,
-  role          user_role NOT NULL DEFAULT 'ACCOUNTS',
+  email         VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role          user_role NOT NULL DEFAULT 'SALES',
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_users_email ON users (lower(email));
-
+-- ----------------------------------------------------------------------------
 -- customers
+-- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS customers (
   id            SERIAL PRIMARY KEY,
   name          VARCHAR(150) NOT NULL,
@@ -42,7 +46,9 @@ CREATE INDEX IF NOT EXISTS idx_customers_business    ON customers (lower(busines
 CREATE INDEX IF NOT EXISTS idx_customers_type_status ON customers (type, status);
 CREATE INDEX IF NOT EXISTS idx_customers_followup    ON customers (follow_up_date) WHERE follow_up_date IS NOT NULL;
 
+-- ----------------------------------------------------------------------------
 -- customer_followups
+-- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS customer_followups (
   id             SERIAL PRIMARY KEY,
   customer_id    INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -54,7 +60,9 @@ CREATE TABLE IF NOT EXISTS customer_followups (
 
 CREATE INDEX IF NOT EXISTS idx_followups_customer ON customer_followups (customer_id, created_at DESC);
 
+-- ----------------------------------------------------------------------------
 -- products
+-- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS products (
   id            SERIAL PRIMARY KEY,
   name          VARCHAR(200) NOT NULL,
@@ -74,7 +82,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_products_sku ON products (lower(sku));
 CREATE INDEX IF NOT EXISTS idx_products_name     ON products (lower(name));
 CREATE INDEX IF NOT EXISTS idx_products_category ON products (lower(category));
 
+-- ----------------------------------------------------------------------------
 -- stock_movements (audit history)
+-- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS stock_movements (
   id               SERIAL PRIMARY KEY,
   product_id       INTEGER NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
@@ -90,7 +100,9 @@ CREATE TABLE IF NOT EXISTS stock_movements (
 CREATE INDEX IF NOT EXISTS idx_stock_movements_product ON stock_movements (product_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_stock_movements_created ON stock_movements (created_at DESC);
 
+-- ----------------------------------------------------------------------------
 -- challans
+-- ----------------------------------------------------------------------------
 CREATE SEQUENCE IF NOT EXISTS challan_number_seq START 1;
 
 CREATE TABLE IF NOT EXISTS challans (
@@ -111,7 +123,9 @@ CREATE INDEX IF NOT EXISTS idx_challans_status      ON challans (status);
 CREATE INDEX IF NOT EXISTS idx_challans_customer    ON challans (customer_id);
 CREATE INDEX IF NOT EXISTS idx_challans_created     ON challans (created_at DESC);
 
+-- ----------------------------------------------------------------------------
 -- challan_items (with product snapshot)
+-- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS challan_items (
   id            SERIAL PRIMARY KEY,
   challan_id    INTEGER NOT NULL REFERENCES challans(id) ON DELETE CASCADE,

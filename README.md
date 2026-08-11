@@ -6,9 +6,9 @@ sales challans) under role-based access.
 
 - **Backend** — Node.js 20+, Express 5, TypeScript, PostgreSQL 14, dependency injection,
   transactional business rules, Zod validation. `backend/`
-- **Frontend** — React 19, TypeScript, Vite, custom design system (no UI library),
+- **Frontend** — React 18, TypeScript, Vite, custom design system (no UI library),
   role-aware UI. `frontend/`
-- **Tests** — Vitest + Supertest against a disposable test database (57 tests).
+- **Tests** — Vitest + Supertest against a disposable test database (54 tests).
 
 ---
 
@@ -16,7 +16,7 @@ sales challans) under role-based access.
 
 | Area | What you get |
 | --- | --- |
-| **Authentication** | **Firebase Auth** (email/password + Google). The backend verifies Firebase ID tokens via the Admin SDK, auto-provisions new users as view-only `ACCOUNTS`, and admins grant roles in-app. First user becomes `ADMIN`. |
+| **Authentication** | Login with JWT (8h expiry), session restore via `/auth/me`, route guards on both API and UI. |
 | **Roles** | `ADMIN`, `SALES`, `WAREHOUSE`, `ACCOUNTS`. Every write endpoint is role-checked server-side; the UI hides what a role cannot do. |
 | **Customers (CRM)** | CRUD, search + type/status filters, pagination, scheduled follow-up date, full follow-up timeline with notes. |
 | **Products (ERP)** | CRUD with unique SKU, opening stock, min-stock low-stock flag, category and storage location. |
@@ -31,7 +31,7 @@ sales challans) under role-based access.
 - **Runtime:** Node.js 20+, Express 5, TypeScript 5
 - **Database:** PostgreSQL 14, `pg` driver, raw SQL, enums + unique lower-case indexes
 - **Validation:** Zod (shared schemas for body/query/params)
-- **Auth:** Firebase Auth + `firebase-admin` (no self-managed passwords or JWT secrets)
+- **Auth:** `jsonwebtoken` + `bcryptjs`
 - **Tests:** Vitest + Supertest
 - **Frontend:** React 18, React Router 7, Vite
 - **Hosting configs:** `render.yaml` (backend), `vercel.json` (frontend), GitHub Actions CI
@@ -71,23 +71,12 @@ vercel.json        deploy config (frontend)
 - PostgreSQL 14+ running locally (`pg_isready`)
 - npm 10+
 
-### 1. Configure Firebase (one-time)
-
-1. Create a project in the [Firebase Console](https://console.firebase.google.com).
-2. Enable **Email/Password** and (optionally) **Google** under
-   Authentication → Sign-in method.
-3. Add a **Web app** (Project settings → Your apps) and copy its `apiKey`, `authDomain`,
-   `projectId`, `appId`.
-4. Generate a **service account key** (Project settings → Service accounts → Generate
-   new private key). This is the Server SDK credential the backend uses to verify ID
-   tokens. Treat it as a secret — never commit it.
-
-### 2. Configure the backend
+### 1. Configure the backend
 
 ```bash
 cd backend
 cp .env.example .env
-# edit .env — set DATABASE_URL, TEST_DATABASE_URL, FIREBASE_CREDENTIALS_PATH, FRONTEND_URL
+# edit .env — set DATABASE_URL, TEST_DATABASE_URL, JWT_SECRET, FRONTEND_URL
 ```
 
 Required variables:
@@ -96,45 +85,48 @@ Required variables:
 | --- | --- | --- |
 | `DATABASE_URL` | `postgres://localhost:5432/crm_dev` | Main database |
 | `TEST_DATABASE_URL` | `postgres://localhost:5432/crm_test` | Used only by the test suite |
-| `FIREBASE_CREDENTIALS_PATH` | `.firebase/meridian-erp-firebase-adminsdk.json` | Service-account JSON for the Admin SDK (path or inline `FIREBASE_PROJECT_ID` + `FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY`) |
+| `JWT_SECRET` | long random string | Signs auth tokens — never commit the real value |
+| `JWT_EXPIRES_IN` | `8h` | Token lifetime |
 | `FRONTEND_URL` | `http://localhost:5173` | CORS allow-list (comma-separated, spaces ok) |
 | `PORT` | `4000` | API port |
 
 > Note: port **5000** is avoided because macOS AirPlay/Control Center owns it.
 
-### 3. Prepare the databases
+### 2. Prepare the databases
 
 ```bash
-# Creates the databases if missing, applies schema, and seeds dev data (customers/products)
+# Creates the databases if missing, applies schema, and seeds dev data
 npm run db:setup
 # Reset (drop + recreate) whenever you want a clean slate
 npm run db:reset
 ```
 
-There are **no seeded logins** — users come from Firebase. The first person who signs
-in (email/password or Google) is auto-promoted to `ADMIN`; everyone else starts
-view-only (`ACCOUNTS`) until an admin grants a role on the **Users** page.
+Seed accounts (all passwords end in `@123`):
 
-The dev seed adds 8 customers and 8 products with opening-stock movements.
+| Role | Email |
+| --- | --- |
+| Admin | `admin@crmportal.dev` |
+| Sales | `sales@crmportal.dev` |
+| Warehouse | `warehouse@crmportal.dev` |
+| Accounts | `accounts@crmportal.dev` |
 
-### 4. Run the backend
+The dev seed also adds 8 customers and 8 products with opening-stock movements.
+
+### 3. Run the backend
 
 ```bash
 npm run dev        # tsx watch, port 4000
 ```
 
-### 5. Run the frontend
+### 4. Run the frontend
 
 ```bash
 cd ../frontend
-cp .env.example .env
-# edit .env — set VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_APP_ID
 npm install
 npm run dev        # Vite on :5173, proxies /auth /customers /products /stock /challans /dashboard /health to :4000
 ```
 
-Open http://localhost:5173 and sign in — or create an account. The first sign-in
-bootstraps the admin user.
+Open http://localhost:5173 and sign in with one of the seed accounts.
 
 ### Other scripts
 
@@ -153,7 +145,7 @@ npm run test       # backend: full test suite (needs a reachable test DB)
 | `npm run db:setup` | backend | Create DBs + schema + seed |
 | `npm run db:reset` | backend | Drop & recreate + reseed |
 | `npm run dev` | backend / frontend | Dev servers (API :4000, SPA :5173) |
-| `npm run test` | backend | 57 tests, disposable `crm_test` DB |
+| `npm run test` | backend | 54 tests, disposable `crm_test` DB |
 | `npm run build` / `typecheck` | backend, frontend | Compile + typecheck |
 
 ---
@@ -162,17 +154,12 @@ npm run test       # backend: full test suite (needs a reachable test DB)
 
 ### How it works
 
-1. The frontend signs the user in with **Firebase Auth** (email/password or Google).
-2. It fetches an ID token (`getIdToken()`) and stores it (`localStorage crm.token`),
-   attaching `Authorization: Bearer <token>` on every request.
-3. The backend verifies the token with the **Firebase Admin SDK** and maps the user to
-   a local row (`firebase_uid`). Unknown users are auto-provisioned: the **first user
-   becomes `ADMIN`**, everyone else starts view-only (`ACCOUNTS`).
-4. `requireAuth` verifies the token; `requireRole('SALES')` etc. gates endpoints.
-5. A 401 on any request dispatches `crm:unauthorized`, which signs the user out of
-   Firebase and redirects to `/login`.
-6. Admins grant roles from the in-app **Users** page (`GET /auth/users`,
-   `PATCH /auth/users/:id/role`). Changing your own role is blocked.
+1. `POST /auth/login` returns a JWT and the user profile.
+2. The frontend stores the token (`localStorage crm.token`) and attaches
+   `Authorization: Bearer <token>` on every request.
+3. `requireAuth` verifies the token; `requireRole('SALES')` etc. gates endpoints.
+4. A 401 on any request dispatches `crm:unauthorized`, which clears the session and
+   redirects to `/login`.
 
 ### Permission matrix (enforced server-side)
 
@@ -191,9 +178,8 @@ Base URL (local): `http://localhost:4000`
 
 | Method | Endpoint | Description | Roles |
 | --- | --- | --- | --- |
-| `GET` | `/auth/me` | Current user (provisions new users on first call) | all |
-| `GET` | `/auth/users` | List portal users (search/paginate) | ADMIN |
-| `PATCH` | `/auth/users/:id/role` | Grant/change a role | ADMIN |
+| `POST` | `/auth/login` | Sign in → `{ token, user }` | public |
+| `GET` | `/auth/me` | Current user from token | all |
 | `GET` | `/health` | Health check | public |
 | `GET/POST` | `/customers` | List (search/filter/paginate) / create | all / ADMIN,SALES |
 | `GET/PATCH` | `/customers/:id` | Detail / update | all / ADMIN,SALES |
@@ -240,7 +226,7 @@ Full request/response examples, SRP `docs/api.md`, and a ready-to-import
 
 ```bash
 cd backend
-npm run test        # 57 tests across auth, customers, products, stock, challans, roles
+npm run test        # 54 tests across auth, customers, products, stock, challans, roles
 npm run test:watch  # interactive
 ```
 
