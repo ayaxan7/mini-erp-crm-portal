@@ -111,21 +111,6 @@
   padding-right: 42px;
 }
 
-.passwordHint {
-  margin-top: 8px;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--color-text-muted);
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.passwordHint strong {
-  color: var(--color-text-secondary);
-  font-weight: 600;
-}
-
 .toggle {
   position: absolute;
   right: 6px;
@@ -164,24 +149,29 @@
 }
 
 .requestBox {
-  margin-top: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-muted);
+  margin-top: 24px;
+  text-align: center;
 }
 
-.requestBox p {
+.requestText {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
 }
 
-.requestBox button {
-  flex-shrink: 0;
+.requestLink {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: inherit;
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.requestLink:hover {
+  color: var(--color-primary-hover);
 }
 
 .demoTitle {

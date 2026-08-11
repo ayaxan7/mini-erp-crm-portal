@@ -112,11 +112,6 @@ export function LoginPage() {
                 </button>
               </div>
             </Field>
-            <p className={styles.passwordHint}>
-              <strong>Password tips:</strong> at least 8 characters with upper &amp; lower case letters, a number, and a
-              special character.
-            </p>
-
             {error && <div className={styles.formError} role="alert">{error}</div>}
 
             <Button type="submit" size="lg" loading={loading} className="w-full">
@@ -127,18 +122,20 @@ export function LoginPage() {
           <div className={styles.demoBox}>
             <p className={styles.demoTitle}>Demo accounts</p>
             <div className={styles.demoRows}>
-              <span><b>Admin</b> — admin@crmportal.dev</span>
-              <span><b>Sales</b> — sales@crmportal.dev</span>
-              <span><b>Warehouse</b> — warehouse@crmportal.dev</span>
-              <span><b>Accounts</b> — accounts@crmportal.dev</span>
+              <span><b>Admin</b> — admin@crmportal.dev · Admin@123</span>
+              <span><b>Sales</b> — sales@crmportal.dev · Sales@123</span>
+              <span><b>Warehouse</b> — warehouse@crmportal.dev · Warehouse@123</span>
+              <span><b>Accounts</b> — accounts@crmportal.dev · Accounts@123</span>
             </div>
           </div>
 
           <div className={styles.requestBox}>
-            <p>Don&apos;t have an account? Request access to the portal.</p>
-            <Button variant="secondary" size="sm" onClick={() => setRequestOpen(true)}>
-              Request access
-            </Button>
+            <p className={styles.requestText}>
+              Don&apos;t have an account?{' '}
+              <button type="button" className={styles.requestLink} onClick={() => setRequestOpen(true)}>
+                Request access
+              </button>
+            </p>
           </div>
         </div>
       </div>
