@@ -3,11 +3,13 @@
 You host three things:
 
 1. **PostgreSQL database** — provisioned on **Neon** (serverless Postgres).
-2. **API backend** — Node/Express on **Render** (`render.yaml` included).
-3. **Frontend** — React/Vite on **Vercel** (`vercel.json` included).
+2. **API backend** — Node/Express on **Render** (`render.yaml` included) or a **Docker
+   container** on EC2 (`backend/Dockerfile`).
+3. **Frontend** — React/Vite on **Vercel** (`vercel.json` included) or an **nginx
+   container** on EC2 (`frontend/Dockerfile`).
 
-> Ports: Render serves the API on port **4000** (configurable via `PORT`). Vercel
-> serves the SPA on 443. No manual port changes needed.
+> Ports: Render serves the API on port **4000**; the Docker frontend serves the SPA on
+> port **80**. Vercel serves on 443. No manual port changes needed.
 
 ---
 
@@ -122,6 +124,82 @@ credentials.
 
 > In production, change the seed passwords (edit `backend/src/db/seed.ts`) before a
 > public launch.
+
+---
+
+## 6. Deploy with Docker on EC2 (preferred for the case study)
+
+Everything the app needs at runtime is containerised: multi-stage `backend/Dockerfile`
+(dev/build/prod, prod bundles system **Chromium** for the PDF invoices) and
+`frontend/Dockerfile` (dev/build + nginx prod). A **single `docker-compose.yml`** runs
+both dev and prod via **profiles**.
+
+### Architecture
+
+| Container | Role | Exposed |
+| --- | --- | --- |
+| `postgres` *(dev only)* | Local PostgreSQL 16 for `--profile dev` | 5432 |
+| `backend` *(prod)* | Node API; proxied by nginx; Chromium available for PDFs | 4000 |
+| `frontend` *(prod)* | nginx serving the SPA and proxying `/api` + `/uploads` | 80 |
+| `backend-dev` / `frontend-dev` | Hot-reload dev servers (bind mounts) | 4000 / 5173 |
+
+### On EC2 (Ubuntu 24.04)
+
+```bash
+# 1. Install Docker + compose plugin (as required on a fresh VM)
+sudo apt-get update && sudo apt-get install -y docker.io docker-compose-plugin
+sudo systemctl enable --now docker
+
+# 2. Open ports 22, 80 (and 443 if you add TLS) in the EC2 security group.
+
+# 3. Clone and configure
+git clone <your-repo-url> crm
+cd crm
+cp backend/.env.example .env        # or create .env from the table below
+```
+
+`.env` on the server (prod profile reads these):
+
+```env
+# Single value used by the backend container (Neon pooled string)
+DATABASE_URL=postgresql://neondb_owner:xxxxx@ep-xxx-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require&uselibpqcompat=true
+JWT_SECRET=<long random string — never reuse the dev one>
+JWT_EXPIRES_IN=8h
+FRONTEND_URL=http://<your-ec2-ip-or-domain>
+
+# Product images → S3. Leave AWS_* empty to keep uploads on disk (./uploads volume).
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+S3_BUCKET=my-crm-images
+```
+
+```bash
+# 4. Start production
+docker compose --profile prod up -d --build
+
+# 5. Verify
+curl http://localhost/health
+curl -X POST http://localhost/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@crmportal.dev","password":"Admin@123"}'
+```
+
+- The database is **not** part of prod — it stays on Neon, so nothing to migrate.
+- Logs: `docker compose --profile prod logs -f backend frontend`.
+- Updates: `git pull && docker compose --profile prod up -d --build`.
+- Images are pre-built by GitHub Actions to GHCR (`docker.yml`); pull them with
+  `docker compose pull` for zero-build deploys.
+- nginx already proxies `/api` to the backend, serves `/uploads` from the backend
+  container, and does SPA fallback to `index.html`.
+- `./uploads` (and `./frontend/uploads` in dev) lives in a named volume — safe across
+  restarts, but for backups prefer the S3 option with real credentials.
+
+### Development on any machine with Docker
+
+```bash
+docker compose --profile dev up --build   # API :4000, SPA :5173, local Postgres
+```
 
 ---
 

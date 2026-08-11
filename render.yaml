@@ -28,3 +28,12 @@ services:
       - key: FRONTEND_URL
         sync: false
         # Example: https://my-crm-portal.vercel.app
+      # Product image storage (optional). Leave unset to store uploads on disk.
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_BUCKET
+        sync: false

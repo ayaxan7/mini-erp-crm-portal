@@ -19,10 +19,12 @@ sales challans) under role-based access.
 | **Authentication** | Login with JWT (8h expiry), session restore via `/auth/me`, route guards on both API and UI. |
 | **Roles** | `ADMIN`, `SALES`, `WAREHOUSE`, `ACCOUNTS`. Every write endpoint is role-checked server-side; the UI hides what a role cannot do. |
 | **Customers (CRM)** | CRUD, search + type/status filters, pagination, scheduled follow-up date, full follow-up timeline with notes. |
-| **Products (ERP)** | CRUD with unique SKU, opening stock, min-stock low-stock flag, category and storage location. |
+| **Products (ERP)** | CRUD with unique SKU, opening stock, min-stock low-stock flag, category and storage location. Optional **product image** — uploaded to AWS S3 when configured, local disk otherwise. |
 | **Stock movements** | Adjust stock IN/OUT with a reason; every change is logged with who/when/reference; full movement history per product. |
 | **Sales challans** | Draft/confirm/cancel. Confirming **deducts stock atomically** (row locks + transaction); cancelling a confirmed challan restocks it. Line items store product **snapshots** (name, SKU, unit price) so history survives price/rename changes. |
+| **Invoice (PDF)** | Any challan exports a branded HTML/EJS **invoice** and a **PDF** (puppeteer-core + system Chromium) with customer billing/shipping blocks, GST line and grand total. |
 | **Dashboard** | Stat cards, 6-month challan trend, recent challans, low-stock alerts. |
+| **Docker + EC2** | Multi-stage Dockerfiles and a single `docker-compose.yml` for dev and prod; GitHub Actions builds images to GHCR; deploy to EC2 with `docker compose up -d`. |
 
 ---
 
@@ -32,9 +34,11 @@ sales challans) under role-based access.
 - **Database:** PostgreSQL 14, `pg` driver, raw SQL, enums + unique lower-case indexes
 - **Validation:** Zod (shared schemas for body/query/params)
 - **Auth:** `jsonwebtoken` + `bcryptjs`
+- **Invoices:** EJS templates + `puppeteer-core` (system Chromium)
+- **Images:** `multer` uploads + AWS SDK v3 S3 (local-disk fallback)
 - **Tests:** Vitest + Supertest
 - **Frontend:** React 18, React Router 7, Vite
-- **Hosting configs:** `render.yaml` (backend), `vercel.json` (frontend), GitHub Actions CI
+- **Hosting configs:** `render.yaml` (backend), `vercel.json` (frontend), Docker/`docker-compose.yml` (EC2), GitHub Actions CI + image build
 
 ---
 
@@ -45,18 +49,20 @@ backend/
   src/
     config/        env, db pool + Queryable (transaction-friendly), date parser
     db/            schema.sql, seed, setup/reset script
-    middleware/    auth (requireAuth/requireRole), error handler, validation
+    middleware/    auth (requireAuth/requireRole), error handler, validation, upload (multer)
     repositories/  raw SQL per table, receive a Queryable so they work in transactions
     services/      business logic + DI wiring, challan transaction orchestration
     controllers/   thin HTTP layer
     routes/        express routers (factory functions)
     validation/    zod schemas
+    views/         EJS invoice template
     utils/         ApiError, asyncHandler, pagination helpers
     app.ts         composition root (DI)
     server.ts      bootstrap + graceful shutdown
   tests/           6 test files, global setup, helpers (seed + reset fixtures)
 docs/              API reference, deployment guide, Postman collection
 frontend/          React + Vite SPA (design system, pages, API client)
+docker-compose.yml single compose file (dev + prod profiles)
 render.yaml        deploy config (backend, optional Postgres)
 vercel.json        deploy config (frontend)
 ```
@@ -89,6 +95,18 @@ Required variables:
 | `JWT_EXPIRES_IN` | `8h` | Token lifetime |
 | `FRONTEND_URL` | `http://localhost:5173` | CORS allow-list (comma-separated, spaces ok) |
 | `PORT` | `4000` | API port |
+
+Optional (product images):
+
+| Variable | Example | Purpose |
+| --- | --- | --- |
+| `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `S3_BUCKET` | `us-east-1` / … | Set all four to upload images to S3; if any is empty, uploads go to `backend/uploads` (served at `/uploads`) |
+
+Optional (PDF invoices):
+
+| Variable | Example | Purpose |
+| --- | --- | --- |
+| `PUPPETEER_EXECUTABLE_PATH` | `/usr/bin/chromium` | Chrome/Chromium binary for `puppeteer-core`; only needed for `invoice.pdf` (auto-set in the Docker image) |
 
 > Note: port **5000** is avoided because macOS AirPlay/Control Center owns it.
 
@@ -123,7 +141,7 @@ npm run dev        # tsx watch, port 4000
 ```bash
 cd ../frontend
 npm install
-npm run dev        # Vite on :5173, proxies /auth /customers /products /stock /challans /dashboard /health to :4000
+npm run dev        # Vite on :5173, proxies /auth /customers /products /stock /challans /dashboard /uploads /health to the API
 ```
 
 Open http://localhost:5173 and sign in with one of the seed accounts.
@@ -186,11 +204,14 @@ Base URL (local): `http://localhost:4000`
 | `GET/POST` | `/customers/:id/followups` | Follow-up history / add | all / ADMIN,SALES |
 | `GET/POST` | `/products` | List (search/low-stock) / create | all / ADMIN,WAREHOUSE |
 | `GET/PATCH` | `/products/:id` | Detail / update | all / ADMIN,WAREHOUSE |
+| `POST` | `/products/:id/image` | Upload a product image (`multipart/form-data`, field `image`) | ADMIN,WAREHOUSE |
 | `POST` | `/products/:id/stock` | Stock IN/OUT with reason | ADMIN,WAREHOUSE |
 | `GET` | `/products/:id/movements` | Movement history | all |
 | `GET` | `/stock/movements` | All movements (pagination) | all |
 | `GET/POST` | `/challans` | List (status/customer/search) / create (draft) | all / ADMIN,SALES |
 | `GET` | `/challans/:id` | Detail with snapshot items | all |
+| `GET` | `/challans/:id/invoice` | Branded HTML invoice | ADMIN,SALES |
+| `GET` | `/challans/:id/invoice.pdf` | PDF export of the invoice | ADMIN,SALES |
 | `PATCH` | `/challans/:id/confirm` | Confirm → atomic stock deduction | ADMIN,SALES |
 | `PATCH` | `/challans/:id/cancel` | Cancel → restock if confirmed | ADMIN,SALES |
 | `GET` | `/dashboard/summary` | Dashboard stats | all |
@@ -237,15 +258,29 @@ The suite automatically creates/refreshes isolation in a separate `crm_test` dat
 
 ## Live environment / deployment
 
-A full, copy-paste guided walkthrough for PostgreSQL provisioning (**Neon**),
-**backend on Render** and **frontend on Vercel** is in `docs/deployment.md`. Deploy
-yaml for Render and Vercel are included at the repo root.
+A full, copy-paste guided walkthrough for PostgreSQL provisioning (**Neon**) and the
+frontend/backend platforms is in `docs/deployment.md`. The repo also ships:
+
+- **Docker** — multi-stage `backend/Dockerfile` and `frontend/Dockerfile`, plus a **single
+  `docker-compose.yml`** that runs both dev and production:
+
+  ```bash
+  # Development (hot reload + local Postgres on :5432)
+  docker compose --profile dev up --build     # API :4000 + SPA :5173
+
+  # Production (uses the DATABASE_URL you provide in .env)
+  docker compose --profile prod up -d --build # API :4000 + nginx :80
+  ```
+
+- **EC2** — the production compose services are what you run on an EC2 VM (see
+  `docs/deployment.md` §Docker & EC2).
+- **GitHub Actions** — `ci.yml` runs typecheck/tests/build on every push; `docker.yml`
+  builds and pushes both images to GHCR.
 
 ---
 
 ## Roadmap / future work
 
-- Invoice generation from confirmed challans (accounts role)
 - Multi-tenant workspaces
 - CSV export for customers/products/movements
 - Email/SMS reminders for overdue follow-ups
