@@ -1,11 +1,12 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Field, Input } from '../../components/ui/Field';
-import { api } from '../../services/api';
+import { api, uploadImage } from '../../services/api';
 import { ApiError } from '../../types/api';
 import type { Product, ProductFormValues } from '../../types/domain';
 import { useToast } from '../../components/ui/Toast';
+import { ImageIcon } from '../../components/ui/Icons';
 import styles from './ProductForms.module.css';
 
 interface Props {
@@ -46,6 +47,11 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const blobUrlRef = useRef<string | null>(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -65,8 +71,40 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
       );
       setErrors({});
       setFormError(null);
+      setImageFile(null);
+      setImageError(null);
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+      setImagePreview(product?.image_url ?? null);
     }
   }, [open, product]);
+
+  const handleImageFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setImageError('Only PNG, JPEG or WebP images are allowed.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError('Image must be 5 MB or smaller.');
+      return;
+    }
+    setImageError(null);
+    setImageFile(file);
+    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    blobUrlRef.current = URL.createObjectURL(file);
+    setImagePreview(blobUrlRef.current);
+  };
+
+  const clearImage = () => {
+    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    blobUrlRef.current = null;
+    setImageFile(null);
+    setImageError(null);
+    setImagePreview(product?.image_url ?? null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const set = (field: FieldName, value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
@@ -99,8 +137,21 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
           currentStock: values.currentStock === '' ? 0 : Number(values.currentStock),
         });
       }
+      let saved = res.data!;
+      if (imageFile) {
+        try {
+          const imageRes = await uploadImage<Product>(`/products/${saved.id}/image`, imageFile);
+          saved = imageRes.data!;
+        } catch (imageErr) {
+          toast.error(
+            imageErr instanceof ApiError ? `Product saved, but image upload failed: ${imageErr.message}` : 'Product saved, but image upload failed',
+          );
+          onSaved(saved);
+          return;
+        }
+      }
       toast.success(product ? 'Product updated' : 'Product created');
-      onSaved(res.data!);
+      onSaved(saved);
     } catch (err) {
       if (err instanceof ApiError) {
         setFormError(err.message);
@@ -162,6 +213,34 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
         </Field>
         <Field label="Storage location">
           <Input value={values.location} onChange={(event) => set('location', event.target.value)} placeholder="e.g. Rack A-3" />
+        </Field>
+        <Field label="Product image" hint="Optional — PNG, JPEG or WebP up to 5 MB" error={imageError ?? undefined} className={styles.imageField}>
+          <div className={styles.imagePicker}>
+            {imagePreview ? (
+              <img className={styles.imagePreview} src={imagePreview} alt="Product preview" />
+            ) : (
+              <span className={`${styles.imagePreview} ${styles.imagePlaceholder}`}>
+                <ImageIcon width={22} height={22} />
+              </span>
+            )}
+            <div className={styles.imageActions}>
+              <Button type="button" variant="secondary" disabled={saving} onClick={() => fileInputRef.current?.click()}>
+                {imagePreview ? 'Change image' : 'Choose image'}
+              </Button>
+              {imagePreview && (
+                <Button type="button" variant="ghost" disabled={saving} onClick={clearImage}>
+                  Clear
+                </Button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className={styles.hiddenInput}
+                onChange={(event) => handleImageFile(event)}
+              />
+            </div>
+          </div>
         </Field>
         {formError && <p className={styles.formError}>{formError}</p>}
       </form>

@@ -5,6 +5,43 @@
   padding: 4px 0;
 }
 
+.imageField {
+  grid-column: 1 / -1;
+}
+
+.imagePicker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.imagePreview {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-2);
+}
+
+.imagePlaceholder {
+  border: 1.5px dashed var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.imageActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hiddenInput {
+  display: none;
+}
+
 .formError {
   grid-column: 1 / -1;
   color: var(--color-danger);
