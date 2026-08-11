@@ -24,8 +24,10 @@ export class AccessRequestController {
     const result = await this.accessRequestService.list({ status: query?.status, offset, limit });
     res.json({
       success: true,
-      data: result.data,
-      meta: { page, limit, total: result.total, totalPages: Math.ceil(result.total / limit) },
+      data: {
+        data: result.data,
+        meta: { page, limit, total: result.total, totalPages: Math.ceil(result.total / limit) },
+      },
     });
   });
 

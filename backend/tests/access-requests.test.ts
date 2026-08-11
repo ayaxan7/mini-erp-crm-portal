@@ -55,8 +55,9 @@ describe('ACCESS REQUESTS', () => {
     const admin = await auth('ADMIN');
     const res = await admin.get('/auth/access-requests');
     expect(res.status).toBe(200);
-    expect(res.body.data).toHaveLength(1);
-    expect(res.body.data[0]).toMatchObject({ email: EMAIL, status: 'PENDING' });
+    expect(res.body.data.data).toHaveLength(1);
+    expect(res.body.data.data[0]).toMatchObject({ email: EMAIL, status: 'PENDING' });
+    expect(res.body.data.meta).toMatchObject({ page: 1, total: 1 });
   });
 
   it('filters by status', async () => {
@@ -65,8 +66,8 @@ describe('ACCESS REQUESTS', () => {
     const admin = await auth('ADMIN');
     const res = await admin.get('/auth/access-requests?status=APPROVED');
     expect(res.status).toBe(200);
-    expect(res.body.data).toHaveLength(0);
-    expect(res.body.meta.total).toBe(0);
+    expect(res.body.data.data).toHaveLength(0);
+    expect(res.body.data.meta.total).toBe(0);
   });
 
   it('approves a request, creates the user, and returns a generated password', async () => {
