@@ -9,7 +9,9 @@ import { Field, Input, Select, Textarea } from '../../components/ui/Field';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { formatMoney } from '../../utils/format';
-import { ArrowLeftIcon, SearchIcon, XIcon } from '../../components/ui/Icons';
+import { ArrowLeftIcon, SearchIcon, XIcon, PlusIcon } from '../../components/ui/Icons';
+import { CustomerFormModal } from '../customers/CustomerFormModal';
+import { ProductFormModal } from '../products/ProductFormModal';
 import styles from './ChallanCreate.module.css';
 
 export function ChallanCreatePage() {
@@ -28,6 +30,8 @@ export function ChallanCreatePage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [searching, setSearching] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const [customerFormOpen, setCustomerFormOpen] = useState(false);
+  const [productFormOpen, setProductFormOpen] = useState(false);
 
   const [remarks, setRemarks] = useState('');
   const [status, setStatus] = useState<ChallanStatus>('DRAFT');
@@ -112,7 +116,22 @@ export function ChallanCreatePage() {
 
   const lineMax = (productId: number) => {
     const line = lines.find((item) => item.productId === productId);
-    return line ? Math.max(line.availableStock, 0) : 0;
+    if (!line) return 0;
+    return Math.max(line.availableStock, line.quantity);
+  };
+
+  const handleCustomerCreated = (customer: Customer) => {
+    setCustomerFormOpen(false);
+    setCustomers((current) => [customer, ...current]);
+    setCustomerId(String(customer.id));
+    setCustomerError(null);
+    toast.success(`${customer.business_name || customer.name} added — selected`);
+  };
+
+  const handleProductCreated = (product: Product) => {
+    setProductFormOpen(false);
+    addLine(product);
+    toast.success(`${product.name} created and added to the challan`);
   };
 
   const submit = async (saveStatus: ChallanStatus) => {
@@ -160,7 +179,15 @@ export function ChallanCreatePage() {
       <div className={styles.grid}>
         <div className={styles.main}>
           <Card className={styles.section}>
-            <Card.Header title="Customer" description={customers.length === 0 ? 'No customers found' : `${customers.length} found — keep typing to refine`} />
+            <Card.Header
+              title="Customer"
+              description={customers.length === 0 ? 'No customers found' : `${customers.length} found — keep typing to refine`}
+              actions={
+                <Button variant="secondary" size="sm" icon={<PlusIcon />} onClick={() => setCustomerFormOpen(true)}>
+                  New customer
+                </Button>
+              }
+            />
             <div className={styles.sectionBody}>
               <Field label="Customer" required error={customerError ?? undefined}>
                 <div className={styles.customerWrap}>
@@ -189,19 +216,38 @@ export function ChallanCreatePage() {
           </Card>
 
           <Card className={styles.section}>
-            <Card.Header title="Products" description="Search a product to add it as a line" />
+            <Card.Header
+              title="Products"
+              description="Search a product to add it as a line"
+              actions={
+                <Button variant="secondary" size="sm" icon={<PlusIcon />} onClick={() => setProductFormOpen(true)}>
+                  New product
+                </Button>
+              }
+            />
             <div className={styles.sectionBody}>
               <div className={styles.picker} ref={pickerRef}>
                 <div className={styles.searchWrap}>
                   <SearchIcon />
-                  <Input value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Search product name or SKU…" aria-label="Search products" />
+                  <Input
+                    value={productQuery}
+                    onChange={(event) => setProductQuery(event.target.value)}
+                    onFocus={() => setPickerOpen(true)}
+                    placeholder="Search product name or SKU…"
+                    aria-label="Search products"
+                  />
                 </div>
                 {pickerOpen && (
                   <ul className={styles.results}>
                     {searching ? (
                       <li className={styles.resultEmpty}>Searching…</li>
                     ) : productResults.length === 0 ? (
-                      <li className={styles.resultEmpty}>No products match “{productQuery}”.</li>
+                      <li className={styles.resultEmpty}>
+                        No products match “{productQuery}”.
+                        <Button type="button" variant="secondary" size="sm" icon={<PlusIcon />} onClick={() => setProductFormOpen(true)}>
+                          Add a new product
+                        </Button>
+                      </li>
                     ) : (
                       productResults.map((product) => (
                         <li key={product.id}>
@@ -312,6 +358,9 @@ export function ChallanCreatePage() {
           </Card>
         </div>
       </div>
+
+      <CustomerFormModal open={customerFormOpen} onClose={() => setCustomerFormOpen(false)} onSaved={handleCustomerCreated} />
+      <ProductFormModal open={productFormOpen} onClose={() => setProductFormOpen(false)} onSaved={handleProductCreated} />
     </div>
   );
 }
