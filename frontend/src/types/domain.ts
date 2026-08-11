@@ -66,6 +66,7 @@ export interface Product {
   min_stock: number;
   location: string | null;
   image_url: string | null;
+  image_key: string | null;
   is_low_stock: boolean;
   created_by_name: string | null;
   created_at: string;

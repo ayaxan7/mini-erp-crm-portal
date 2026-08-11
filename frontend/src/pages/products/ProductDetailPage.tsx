@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { formatDateTime } from '../../utils/format';
 import { ArrowLeftIcon, PencilIcon, ImageIcon } from '../../components/ui/Icons';
+import { useProductImageUrl } from '../../services/images';
 import { ProductFormModal } from './ProductFormModal';
 import { SkeletonRows, ErrorState } from '../../components/ui/State';
 import styles from './ProductDetail.module.css';
@@ -27,6 +28,7 @@ export function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const imageUrl = useProductImageUrl(product);
 
   const [type, setType] = useState<MovementType>('IN');
   const [quantity, setQuantity] = useState('');
@@ -167,8 +169,8 @@ export function ProductDetailPage() {
         <Card.Header title="Product image" description="Shown on the products list" />
         <div className={styles.imageBody}>
           <div className={styles.imagePreviewWrap}>
-            {product.image_url ? (
-              <img className={styles.imagePreview} src={product.image_url} alt={product.name} />
+            {imageUrl ? (
+              <img className={styles.imagePreview} src={imageUrl} alt={product.name} />
             ) : (
               <div className={`${styles.imagePreview} ${styles.imagePlaceholder}`}>
                 <ImageIcon width={30} height={30} />
@@ -183,7 +185,7 @@ export function ProductDetailPage() {
                 disabled={uploadingImage}
                 onClick={() => fileInputRef.current?.click()}
               >
-                {uploadingImage ? 'Uploading…' : product.image_url ? 'Replace image' : 'Upload image'}
+                {uploadingImage ? 'Uploading…' : product.image_key ? 'Replace image' : 'Upload image'}
               </Button>
               {imageError && <p className={styles.imageError}>{imageError}</p>}
               <p className={styles.imageHint}>PNG, JPEG or WebP, up to 5 MB.</p>

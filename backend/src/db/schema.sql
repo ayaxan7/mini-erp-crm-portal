@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS products (
   min_stock     INTEGER NOT NULL DEFAULT 0 CHECK (min_stock >= 0),
   location      VARCHAR(150),
   image_url     VARCHAR(500),
+  image_key     VARCHAR(500),
   created_by    INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -99,6 +100,7 @@ CREATE TABLE IF NOT EXISTS products (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_products_sku ON products (lower(sku));
 
 ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url VARCHAR(500);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS image_key VARCHAR(500);
 
 CREATE INDEX IF NOT EXISTS idx_products_name     ON products (lower(name));
 CREATE INDEX IF NOT EXISTS idx_products_category ON products (lower(category));

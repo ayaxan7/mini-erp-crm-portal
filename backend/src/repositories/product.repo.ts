@@ -113,10 +113,10 @@ export class ProductRepository {
     return rows[0];
   }
 
-  async setImage(id: number, imageUrl: string): Promise<QueryResultRow | undefined> {
+  async setImage(id: number, imageKey: string): Promise<QueryResultRow | undefined> {
     const { rows } = await this.db.query<QueryResultRow>(
-      'UPDATE products SET image_url = $2, updated_at = now() WHERE id = $1 RETURNING *',
-      [id, imageUrl],
+      'UPDATE products SET image_key = $2, updated_at = now() WHERE id = $1 RETURNING *',
+      [id, imageKey],
     );
     return rows[0];
   }

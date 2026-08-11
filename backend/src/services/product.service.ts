@@ -78,8 +78,20 @@ export class ProductService {
     }
     const ext = file.originalname.split('.').pop()?.toLowerCase() || 'png';
     const key = `products/${id}-${Date.now()}.${ext}`;
-    const url = await this.imageStorage.save(key, file.buffer, file.mimetype);
-    const updated = await this.productRepo.setImage(id, url);
+    const storedKey = await this.imageStorage.save(key, file.buffer, file.mimetype);
+    const updated = await this.productRepo.setImage(id, storedKey);
     return updated ?? product;
+  }
+
+  async getImageUrl(id: number, expiresInSeconds = 900) {
+    const product = await this.productRepo.findById(id);
+    if (!product) {
+      throw ApiError.notFound('Product not found');
+    }
+    if (!this.imageStorage || !product.image_key) {
+      return { url: null, expiresIn: expiresInSeconds };
+    }
+    const url = await this.imageStorage.resolveUrl(product.image_key, expiresInSeconds);
+    return { url, expiresIn: expiresInSeconds };
   }
 }

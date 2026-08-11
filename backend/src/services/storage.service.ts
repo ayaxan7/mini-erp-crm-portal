@@ -1,15 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { Env } from '../config/env.js';
 
 export interface ImageStorage {
   save(key: string, buffer: Buffer, contentType: string): Promise<string>;
+  resolveUrl(key: string, expiresInSeconds: number): Promise<string>;
 }
 
 export class S3ImageStorage implements ImageStorage {
   private readonly client: S3Client;
-  private readonly region: string;
 
   constructor(
     private readonly bucket: string,
@@ -17,15 +18,18 @@ export class S3ImageStorage implements ImageStorage {
     accessKeyId: string,
     secretAccessKey: string,
   ) {
-    this.region = region;
     this.client = new S3Client({ region, credentials: { accessKeyId, secretAccessKey } });
   }
 
   async save(key: string, buffer: Buffer, contentType: string): Promise<string> {
-    await this.client.send(
-      new PutObjectCommand({ Bucket: this.bucket, Key: key, Body: buffer, ContentType: contentType, ACL: 'public-read' }),
-    );
-    return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+    await this.client.send(new PutObjectCommand({ Bucket: this.bucket, Key: key, Body: buffer, ContentType: contentType }));
+    return key;
+  }
+
+  async resolveUrl(key: string, expiresInSeconds: number): Promise<string> {
+    return getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.bucket, Key: key }), {
+      expiresIn: expiresInSeconds,
+    });
   }
 }
 
@@ -36,6 +40,10 @@ export class LocalImageStorage implements ImageStorage {
     const target = path.join(this.baseDir, key);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, buffer);
+    return key;
+  }
+
+  async resolveUrl(key: string): Promise<string> {
     return `${this.publicBase}/${key}`;
   }
 }

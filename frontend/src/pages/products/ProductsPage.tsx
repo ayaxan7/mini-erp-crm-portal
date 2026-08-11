@@ -12,12 +12,24 @@ import { Badge } from '../../components/ui/Badge';
 import { SearchIcon, PlusIcon, BoxIcon, ImageIcon } from '../../components/ui/Icons';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/format';
+import { useProductImageUrl } from '../../services/images';
 import { ProductFormModal } from './ProductFormModal';
 import styles from './ProductsPage.module.css';
 
 interface ListResponse {
   data: Product[];
   meta: { page: number; limit: number; total: number; totalPages: number };
+}
+
+function ProductThumb({ product }: { product: Product }) {
+  const url = useProductImageUrl(product);
+  return url ? (
+    <img className={styles.thumb} src={url} alt={product.name} />
+  ) : (
+    <span className={`${styles.thumb} ${styles.thumbEmpty}`}>
+      <ImageIcon width={16} height={16} />
+    </span>
+  );
 }
 
 export function ProductsPage() {
@@ -121,13 +133,7 @@ export function ProductsPage() {
       header: '',
       render: (row) => (
         <div className={styles.thumbWrap}>
-          {row.image_url ? (
-            <img className={styles.thumb} src={row.image_url} alt={row.name} />
-          ) : (
-            <span className={`${styles.thumb} ${styles.thumbEmpty}`}>
-              <ImageIcon width={16} height={16} />
-            </span>
-          )}
+          <ProductThumb product={row} />
           {canManage ? (
             <button
               type="button"

@@ -30,6 +30,12 @@ export class ProductController {
     res.json({ success: true, data });
   });
 
+  imageUrl = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.validatedParams as IdParams;
+    const data = await this.productService.getImageUrl(id);
+    res.json({ success: true, data });
+  });
+
   create = asyncHandler(async (req: Request, res: Response) => {
     const input = req.validatedBody as CreateProductInput;
     const data = await this.productService.create(input, req.user!.id);

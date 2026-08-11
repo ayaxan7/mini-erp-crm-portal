@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { auth, resetDb } from './helpers.js';
+import { app } from './helpers.js';
+import request from 'supertest';
 
 describe('PRODUCTS', () => {
   it('creates a product and uppercases the SKU', async () => {
@@ -75,5 +77,19 @@ describe('PRODUCTS', () => {
     const api = await auth('ADMIN');
     const res = await api.get('/products/99999');
     expect(res.status).toBe(404);
+  });
+
+  it('returns a null image url when product has no stored image', async () => {
+    await resetDb();
+    const api = await auth('ADMIN');
+    const res = await api.get('/products/1/image-url');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({ url: null, expiresIn: 900 });
+  });
+
+  it('requires authentication for the image-url endpoint', async () => {
+    await resetDb();
+    const res = await request(app).get('/products/1/image-url');
+    expect(res.status).toBe(401);
   });
 });

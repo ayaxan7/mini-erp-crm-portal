@@ -7,6 +7,7 @@ import { ApiError } from '../../types/api';
 import type { Product, ProductFormValues } from '../../types/domain';
 import { useToast } from '../../components/ui/Toast';
 import { ImageIcon } from '../../components/ui/Icons';
+import { useProductImageUrl } from '../../services/images';
 import styles from './ProductForms.module.css';
 
 interface Props {
@@ -53,6 +54,7 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const blobUrlRef = useRef<string | null>(null);
   const toast = useToast();
+  const existingImageUrl = useProductImageUrl(product);
 
   useEffect(() => {
     if (open) {
@@ -75,7 +77,7 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
       setImageError(null);
       if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
       blobUrlRef.current = null;
-      setImagePreview(product?.image_url ?? null);
+      setImagePreview(null);
     }
   }, [open, product]);
 
@@ -102,7 +104,7 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
     blobUrlRef.current = null;
     setImageFile(null);
     setImageError(null);
-    setImagePreview(product?.image_url ?? null);
+    setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -218,6 +220,8 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
           <div className={styles.imagePicker}>
             {imagePreview ? (
               <img className={styles.imagePreview} src={imagePreview} alt="Product preview" />
+            ) : existingImageUrl ? (
+              <img className={styles.imagePreview} src={existingImageUrl} alt="Product preview" />
             ) : (
               <span className={`${styles.imagePreview} ${styles.imagePlaceholder}`}>
                 <ImageIcon width={22} height={22} />
@@ -225,7 +229,7 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
             )}
             <div className={styles.imageActions}>
               <Button type="button" variant="secondary" disabled={saving} onClick={() => fileInputRef.current?.click()}>
-                {imagePreview ? 'Change image' : 'Choose image'}
+                {imagePreview || existingImageUrl ? 'Change image' : 'Choose image'}
               </Button>
               {imagePreview && (
                 <Button type="button" variant="ghost" disabled={saving} onClick={clearImage}>

@@ -14,6 +14,7 @@ export function productRouter(productController: ProductController): Router {
   router.get('/', validate(productListQuerySchema, 'query'), productController.list);
   router.post('/', requireRole('ADMIN', 'WAREHOUSE'), validate(createProductSchema), productController.create);
   router.get('/:id', validate(idParamsSchema, 'params'), productController.get);
+  router.get('/:id/image-url', validate(idParamsSchema, 'params'), productController.imageUrl);
   router.get('/:id/movements', validate(idParamsSchema, 'params'), validate(stockMovementListQuerySchema, 'query'), productController.movements);
   router.post('/:id/image', requireRole('ADMIN', 'WAREHOUSE'), validate(idParamsSchema, 'params'), imageUpload.single('image'), productController.uploadImage);
   router.patch('/:id', requireRole('ADMIN', 'WAREHOUSE'), validate(idParamsSchema, 'params'), validate(updateProductSchema), productController.update);
