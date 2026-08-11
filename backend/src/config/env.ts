@@ -15,6 +15,10 @@ export interface Env {
   jwtSecret: string;
   jwtExpiresIn: string;
   frontendUrl: string;
+  awsRegion?: string;
+  awsAccessKeyId?: string;
+  awsSecretAccessKey?: string;
+  s3Bucket?: string;
 }
 
 function required(name: string, value: string | undefined): string {
@@ -36,6 +40,10 @@ const env: Env = {
   jwtSecret: required('JWT_SECRET', process.env.JWT_SECRET),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  awsRegion: process.env.AWS_REGION || undefined,
+  awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID || undefined,
+  awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || undefined,
+  s3Bucket: process.env.S3_BUCKET || undefined,
 };
 
 export default env;

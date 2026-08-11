@@ -25,8 +25,14 @@ export function UsersIcon(props: IconProps) {
 
 export function BoxIcon(props: IconProps) {
   return <svg {...base(props)}>
-    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-    <path d="M3.3 7 12 12l8.7-5" /><path d="M12 22V12" />
+    <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" />
+  </svg>;
+}
+
+export function ImageIcon(props: IconProps) {
+  return <svg {...base(props)}>
+    <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" />
+    <path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21" />
   </svg>;
 }
 
@@ -47,6 +53,21 @@ export function AlertIcon(props: IconProps) {
   return <svg {...base(props)}>
     <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
     <path d="M12 9v4" /><path d="M12 17h.01" />
+  </svg>;
+}
+
+export function EyeIcon(props: IconProps) {
+  return <svg {...base(props)}>
+    <path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>;
+}
+
+export function EyeSlashIcon(props: IconProps) {
+  return <svg {...base(props)}>
+    <path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z" />
+    <path d="M12 9a3 3 0 0 1 3 3" />
+    <path d="M4 4l16 16" />
   </svg>;
 }
 

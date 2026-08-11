@@ -2,11 +2,15 @@ import type { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { parsePagination } from '../types/index.js';
 import type { ChallanService } from '../services/challan.service.js';
+import type { InvoiceService } from '../services/invoice.service.js';
 import type { IdParams } from '../validation/common.schema.js';
 import type { ChallanListQuery, CreateChallanInput } from '../validation/challan.schema.js';
 
 export class ChallanController {
-  constructor(private readonly challanService: ChallanService) {}
+  constructor(
+    private readonly challanService: ChallanService,
+    private readonly invoiceService: InvoiceService,
+  ) {}
 
   list = asyncHandler(async (req: Request, res: Response) => {
     const query = req.validatedQuery as ChallanListQuery;
@@ -42,5 +46,23 @@ export class ChallanController {
     const { id } = req.validatedParams as IdParams;
     const data = await this.challanService.cancel(id, req.user!.id);
     res.json({ success: true, data });
+  });
+
+  invoiceHtml = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.validatedParams as IdParams;
+    const html = await this.invoiceService.renderHtml(id);
+    res.set('Content-Type', 'text/html');
+    res.send(html);
+  });
+
+  invoicePdf = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.validatedParams as IdParams;
+    const pdf = await this.invoiceService.generatePdf(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="invoice-${id}.pdf"`,
+      'Content-Length': String(pdf.length),
+    });
+    res.send(pdf);
   });
 }

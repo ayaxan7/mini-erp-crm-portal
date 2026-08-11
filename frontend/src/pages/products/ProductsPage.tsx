@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { api } from '../../services/api';
+import { api, uploadImage } from '../../services/api';
 import { ApiError } from '../../types/api';
 import type { Product } from '../../types/domain';
 import { DataTable, type Column } from '../../components/ui/DataTable';
@@ -9,7 +9,7 @@ import { PageHeader } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Field';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { SearchIcon, PlusIcon, BoxIcon } from '../../components/ui/Icons';
+import { SearchIcon, PlusIcon, BoxIcon, ImageIcon } from '../../components/ui/Icons';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/format';
 import { ProductFormModal } from './ProductFormModal';
@@ -31,6 +31,9 @@ export function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(searchParams.get('search') ?? '');
+  const [uploadTarget, setUploadTarget] = useState<Product | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const page = Number(searchParams.get('page')) || 1;
   const search = searchParams.get('search') ?? '';
@@ -82,7 +85,66 @@ export function ProductsPage() {
     [searchParams, setSearchParams],
   );
 
+  const handleUploadClick = (row: Product) => {
+    setError(null);
+    setUploadTarget(row);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !uploadTarget) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setError('Only PNG, JPEG or WebP images are allowed');
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const res = await uploadImage<Product>(`/products/${uploadTarget.id}/image`, file);
+      const updated = res.data!;
+      setRows((prev) => prev.map((row) => (row.id === updated.id ? updated : row)));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Image upload failed');
+    } finally {
+      setUploading(false);
+      setUploadTarget(null);
+    }
+  };
+
   const columns: Column<Product>[] = [
+    {
+      key: 'image',
+      header: '',
+      render: (row) => (
+        <div className={styles.thumbWrap}>
+          {row.image_url ? (
+            <img className={styles.thumb} src={row.image_url} alt={row.name} />
+          ) : (
+            <span className={`${styles.thumb} ${styles.thumbEmpty}`}>
+              <ImageIcon width={16} height={16} />
+            </span>
+          )}
+          {canManage ? (
+            <button
+              type="button"
+              className={styles.thumbBtn}
+              aria-label={`Upload image for ${row.name}`}
+              disabled={uploading}
+              onClick={(event) => {
+                event.stopPropagation();
+                handleUploadClick(row);
+              }}
+            >
+              <ImageIcon width={14} height={14} />
+            </button>
+          ) : null}
+        </div>
+      ),
+    },
     {
       key: 'name',
       header: 'Product',
@@ -175,6 +237,14 @@ export function ProductsPage() {
           setFormOpen(false);
           void load();
         }}
+      />
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className={styles.hiddenInput}
+        onChange={(event) => void handleFileChange(event)}
       />
     </div>
   );

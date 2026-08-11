@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { api } from '../../services/api';
+import { api, fetchBlob, downloadBlob } from '../../services/api';
 import { ApiError } from '../../types/api';
 import type { Challan, ChallanItem } from '../../types/domain';
 import { Card } from '../../components/ui/Card';
@@ -11,7 +11,7 @@ import { DataTable, type Column } from '../../components/ui/DataTable';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { formatDateTime, formatMoney } from '../../utils/format';
-import { ArrowLeftIcon, CheckIcon, XIcon } from '../../components/ui/Icons';
+import { ArrowLeftIcon, CheckIcon, XIcon, DocumentIcon } from '../../components/ui/Icons';
 import { SkeletonRows, ErrorState } from '../../components/ui/State';
 import styles from './ChallanDetail.module.css';
 
@@ -32,6 +32,7 @@ export function ChallanDetailPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [acting, setActing] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const canManage = can('ADMIN', 'SALES');
 
   const load = useCallback(async () => {
@@ -81,6 +82,36 @@ export function ChallanDetailPage() {
     }
   };
 
+  const viewInvoice = async () => {
+    const win = window.open('', '_blank');
+    if (!win) {
+      toast.error('Pop-up blocked — please allow pop-ups for this site');
+      return;
+    }
+    win.document.write('Loading invoice…');
+    try {
+      const blob = await fetchBlob(`/challans/${id}/invoice`);
+      win.location.href = URL.createObjectURL(blob);
+    } catch (err) {
+      win.close();
+      if (err instanceof ApiError) toast.error(err.message);
+      else toast.error('Failed to load invoice');
+    }
+  };
+
+  const downloadInvoice = async () => {
+    setPdfLoading(true);
+    try {
+      const blob = await fetchBlob(`/challans/${id}/invoice.pdf`);
+      downloadBlob(blob, `invoice-${id}.pdf`);
+    } catch (err) {
+      if (err instanceof ApiError) toast.error(err.message);
+      else toast.error('Failed to download invoice PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   if (loading) return <SkeletonRows rows={6} />;
   if (error || !detail)
     return <ErrorState title="Could not load this challan" description={error ?? 'Challan not found.'} onRetry={() => void load()} />;
@@ -117,6 +148,16 @@ export function ChallanDetailPage() {
         </div>
         <div className={styles.titleActions}>
           <StatusBadge value={challan.status} />
+          {canManage && (
+            <>
+              <Button variant="secondary" icon={<DocumentIcon />} onClick={() => void viewInvoice()}>
+                View invoice
+              </Button>
+              <Button variant="secondary" icon={<DocumentIcon />} onClick={() => void downloadInvoice()} disabled={pdfLoading}>
+                {pdfLoading ? 'Preparing…' : 'Download PDF'}
+              </Button>
+            </>
+          )}
           {canManage && challan.status === 'DRAFT' && (
             <Button variant="secondary" icon={<CheckIcon />} onClick={() => setConfirmOpen(true)}>
               Confirm challan

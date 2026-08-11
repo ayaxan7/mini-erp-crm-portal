@@ -3,6 +3,7 @@ import cors from 'cors';
 import env from './config/env.js';
 import { pool } from './config/db.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { S3ImageStorage, LocalImageStorage, isS3Configured, UPLOADS_DIR } from './services/storage.service.js';
 
 import { UserRepository } from './repositories/user.repo.js';
 import { CustomerRepository } from './repositories/customer.repo.js';
@@ -17,6 +18,7 @@ import { ProductService } from './services/product.service.js';
 import { StockService } from './services/stock.service.js';
 import { ChallanService } from './services/challan.service.js';
 import { DashboardService } from './services/dashboard.service.js';
+import { InvoiceService } from './services/invoice.service.js';
 
 import { AuthController } from './controllers/auth.controller.js';
 import { CustomerController } from './controllers/customer.controller.js';
@@ -42,16 +44,20 @@ export function createApp(): Application {
 
   const authService = new AuthService(userRepo);
   const customerService = new CustomerService(customerRepo);
-  const productService = new ProductService(productRepo);
+  const imageStorage = isS3Configured(env)
+    ? new S3ImageStorage(env.s3Bucket!, env.awsRegion!, env.awsAccessKeyId!, env.awsSecretAccessKey!)
+    : new LocalImageStorage(UPLOADS_DIR, '/uploads');
+  const productService = new ProductService(productRepo, imageStorage);
   const stockService = new StockService(productRepo, stockRepo);
   const challanService = new ChallanService(challanRepo, productRepo, stockRepo, customerRepo);
+  const invoiceService = new InvoiceService(challanRepo, customerRepo);
   const dashboardService = new DashboardService(dashboardRepo);
 
   const authController = new AuthController(authService);
   const customerController = new CustomerController(customerService);
   const productController = new ProductController(productService, stockService);
   const stockController = new StockController(stockService);
-  const challanController = new ChallanController(challanService);
+  const challanController = new ChallanController(challanService, invoiceService);
   const dashboardController = new DashboardController(dashboardService);
 
   const app = express();
@@ -64,6 +70,7 @@ export function createApp(): Application {
 
   app.use(cors({ origin: allowedOrigins }));
   app.use(express.json({ limit: '1mb' }));
+  app.use('/uploads', express.static(UPLOADS_DIR));
 
   app.get('/health', (_req, res) => {
     res.json({ success: true, message: 'OK' });

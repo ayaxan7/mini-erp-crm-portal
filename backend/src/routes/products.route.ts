@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { validate } from '../middleware/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { imageUpload } from '../middleware/upload.js';
 import { idParamsSchema } from '../validation/common.schema.js';
 import { createProductSchema, updateProductSchema, productListQuerySchema, stockMovementSchema } from '../validation/product.schema.js';
 import { stockMovementListQuerySchema } from '../validation/challan.schema.js';
@@ -14,6 +15,7 @@ export function productRouter(productController: ProductController): Router {
   router.post('/', requireRole('ADMIN', 'WAREHOUSE'), validate(createProductSchema), productController.create);
   router.get('/:id', validate(idParamsSchema, 'params'), productController.get);
   router.get('/:id/movements', validate(idParamsSchema, 'params'), validate(stockMovementListQuerySchema, 'query'), productController.movements);
+  router.post('/:id/image', requireRole('ADMIN', 'WAREHOUSE'), validate(idParamsSchema, 'params'), imageUpload.single('image'), productController.uploadImage);
   router.patch('/:id', requireRole('ADMIN', 'WAREHOUSE'), validate(idParamsSchema, 'params'), validate(updateProductSchema), productController.update);
   router.post('/:id/stock', requireRole('ADMIN', 'WAREHOUSE'), validate(idParamsSchema, 'params'), validate(stockMovementSchema), productController.addStock);
 

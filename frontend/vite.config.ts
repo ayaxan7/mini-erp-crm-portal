@@ -1,18 +1,21 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+const proxyTarget = process.env.VITE_DEV_PROXY_TARGET || 'http://localhost:4000';
+
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
     proxy: {
-      '/health': 'http://localhost:4000',
-      '/auth': 'http://localhost:4000',
-      '/customers': 'http://localhost:4000',
-      '/products': 'http://localhost:4000',
-      '/stock': 'http://localhost:4000',
-      '/challans': 'http://localhost:4000',
-      '/dashboard': 'http://localhost:4000',
+      '/health': proxyTarget,
+      '/auth': proxyTarget,
+      '/customers': proxyTarget,
+      '/products': proxyTarget,
+      '/stock': proxyTarget,
+      '/challans': proxyTarget,
+      '/dashboard': proxyTarget,
+      '/uploads': proxyTarget,
     },
   },
   build: {

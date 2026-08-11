@@ -55,6 +55,51 @@ async function request<T>(path: string, { method = 'GET', body, signal }: Reques
   return payload;
 }
 
+export async function uploadImage<T>(path: string, file: File): Promise<ApiResponse<T>> {
+  const form = new FormData();
+  form.append('image', file);
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const response = await fetch(resolve(path), { method: 'POST', headers, body: form });
+  let payload: ApiResponse<T>;
+  try {
+    payload = (await response.json()) as ApiResponse<T>;
+  } catch {
+    throw new ApiError(response.status, `Unexpected response (${response.status})`);
+  }
+  if (!response.ok || payload.success === false) {
+    throw new ApiError(response.status, payload.message || 'Upload failed', payload.errors);
+  }
+  return payload;
+}
+
+export async function fetchBlob(path: string): Promise<Blob> {
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const response = await fetch(resolve(path), { headers });
+  if (!response.ok) {
+    throw new ApiError(response.status, response.status === 401 ? 'Your session has expired' : `Request failed (${response.status})`);
+  }
+  return response.blob();
+}
+
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 function toQuery(params: Record<string, string | number | boolean | undefined>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {

@@ -59,6 +59,54 @@
   font-weight: 650;
 }
 
+.thumbWrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.thumbEmpty {
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+}
+
+.thumbBtn {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: none;
+  background: var(--color-primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.thumbBtn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.hiddenInput {
+  display: none;
+}
+
 .error {
   padding: 14px 16px;
   border-radius: var(--radius-md);

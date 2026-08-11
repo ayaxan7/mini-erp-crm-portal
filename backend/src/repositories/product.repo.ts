@@ -113,6 +113,14 @@ export class ProductRepository {
     return rows[0];
   }
 
+  async setImage(id: number, imageUrl: string): Promise<QueryResultRow | undefined> {
+    const { rows } = await this.db.query<QueryResultRow>(
+      'UPDATE products SET image_url = $2, updated_at = now() WHERE id = $1 RETURNING *',
+      [id, imageUrl],
+    );
+    return rows[0];
+  }
+
   async findManyByIds(ids: number[]): Promise<QueryResultRow[]> {
     if (ids.length === 0) return [];
     const placeholders = ids.map((_, index) => `$${index + 1}`).join(', ');

@@ -56,4 +56,19 @@ export class ProductController {
     const data = await this.stockService.listByProduct(id, pagination);
     res.json({ success: true, data });
   });
+
+  uploadImage = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.validatedParams as IdParams;
+    const file = req.file;
+    if (!file) {
+      res.status(400).json({ success: false, message: 'No image file provided' });
+      return;
+    }
+    const data = await this.productService.setImage(id, {
+      buffer: file.buffer,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+    });
+    res.json({ success: true, data });
+  });
 }
