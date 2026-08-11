@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { api } from '../../services/api';
+import { api, uploadImage } from '../../services/api';
 import { ApiError } from '../../types/api';
 import type { Product, StockMovement, MovementType } from '../../types/domain';
 import { Card } from '../../components/ui/Card';
@@ -11,7 +11,7 @@ import { DataTable, type Column } from '../../components/ui/DataTable';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { formatDateTime } from '../../utils/format';
-import { ArrowLeftIcon, PencilIcon } from '../../components/ui/Icons';
+import { ArrowLeftIcon, PencilIcon, ImageIcon } from '../../components/ui/Icons';
 import { ProductFormModal } from './ProductFormModal';
 import { SkeletonRows, ErrorState } from '../../components/ui/State';
 import styles from './ProductDetail.module.css';
@@ -33,6 +33,9 @@ export function ProductDetailPage() {
   const [reason, setReason] = useState('');
   const [movError, setMovError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const canManage = can('ADMIN', 'WAREHOUSE');
 
   const load = useCallback(async () => {
@@ -79,6 +82,31 @@ export function ProductDetailPage() {
       setMovError(err instanceof ApiError ? err.message : 'Failed to adjust stock');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setImageError('Only PNG, JPEG or WebP images are allowed.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError('Image must be 5 MB or smaller.');
+      return;
+    }
+    setUploadingImage(true);
+    setImageError(null);
+    try {
+      const res = await uploadImage<Product>(`/products/${id}/image`, file);
+      setProduct(res.data!);
+      toast.success('Product image updated');
+    } catch (err) {
+      setImageError(err instanceof ApiError ? err.message : 'Image upload failed');
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -134,6 +162,42 @@ export function ProductDetailPage() {
           )}
         </div>
       </div>
+
+      <Card className={styles.imageCard}>
+        <Card.Header title="Product image" description="Shown on the products list" />
+        <div className={styles.imageBody}>
+          <div className={styles.imagePreviewWrap}>
+            {product.image_url ? (
+              <img className={styles.imagePreview} src={product.image_url} alt={product.name} />
+            ) : (
+              <div className={`${styles.imagePreview} ${styles.imagePlaceholder}`}>
+                <ImageIcon width={30} height={30} />
+              </div>
+            )}
+          </div>
+          {canManage && (
+            <div className={styles.imageControls}>
+              <Button
+                variant="secondary"
+                icon={<ImageIcon />}
+                disabled={uploadingImage}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploadingImage ? 'Uploading…' : product.image_url ? 'Replace image' : 'Upload image'}
+              </Button>
+              {imageError && <p className={styles.imageError}>{imageError}</p>}
+              <p className={styles.imageHint}>PNG, JPEG or WebP, up to 5 MB.</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className={styles.hiddenInput}
+                onChange={(event) => void handleImageUpload(event)}
+              />
+            </div>
+          )}
+        </div>
+      </Card>
 
       <div className={styles.statsRow}>
         <StockStat label="Units in stock" value={String(product.current_stock)} tone={product.is_low_stock ? 'danger' : 'normal'} />
