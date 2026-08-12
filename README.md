@@ -279,10 +279,22 @@ frontend/backend platforms is in `docs/deployment.md`. The repo also ships:
   docker compose --profile prod up -d --build # API :4000 + nginx :80
   ```
 
+- **Pre-built images on Docker Hub** — every push to `main` publishes
+  `ayaxan7/crm-portal-backend:latest` and `ayaxan7/crm-portal-frontend:latest`
+  (pushes to `dev` use the `dev` tag; version tags use their own tag). Anyone can run
+  the portal without a local build:
+
+  ```bash
+  docker pull ayaxan7/crm-portal-backend:latest
+  docker pull ayaxan7/crm-portal-frontend:latest
+  # or pull them in one step via compose (requires the .env from §Deployment)
+  docker compose --profile prod up -d
+  ```
+
 - **EC2:** the production compose services are what you run on an EC2 VM (see
   `docs/deployment.md` §Docker & EC2).
 - **GitHub Actions:** `ci.yml` runs typecheck/tests/build on every push; `docker.yml`
-  builds and pushes both images to GHCR.
+  builds and pushes both images to Docker Hub (`latest` for `main`, `dev` for `dev`).
 
 ---
 

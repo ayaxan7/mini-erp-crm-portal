@@ -181,8 +181,16 @@ curl -X POST http://localhost/auth/login \
 - The database is **not** part of prod — it stays on Neon, so nothing to migrate.
 - Logs: `docker compose --profile prod logs -f backend frontend`.
 - Updates: `git pull && docker compose --profile prod up -d --build`.
-- Images are pre-built by GitHub Actions to GHCR (`docker.yml`); pull them with
-  `docker compose pull` for zero-build deploys.
+- Images are pre-built by GitHub Actions to **Docker Hub** (`docker.yml`): pushes to
+  `main` publish `ayaxan7/crm-portal-backend:latest` and
+  `ayaxan7/crm-portal-frontend:latest` (pushes to `dev` use the `dev` tag). Pull them
+  with `docker compose pull` for zero-build deploys, or run the portal anywhere
+  without a local build:
+
+  ```bash
+  docker pull ayaxan7/crm-portal-backend:latest
+  docker pull ayaxan7/crm-portal-frontend:latest
+  ```
 - nginx already proxies `/api` to the backend, serves `/uploads` from the backend
   container, and does SPA fallback to `index.html`.
 - `./uploads` (and `./frontend/uploads` in dev) lives in a named volume — safe across

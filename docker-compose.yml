@@ -18,10 +18,10 @@ services:
 
   backend:
     profiles: ["prod"]
+    image: ayaxan7/crm-portal-backend:latest
     build:
       context: ./backend
       target: prod
-    image: crm-portal-backend:latest
     environment:
       NODE_ENV: production
       PORT: "4000"
@@ -41,10 +41,10 @@ services:
 
   frontend:
     profiles: ["prod"]
+    image: ayaxan7/crm-portal-frontend:latest
     build:
       context: ./frontend
       target: prod
-    image: crm-portal-frontend:latest
     depends_on:
       - backend
     ports:
