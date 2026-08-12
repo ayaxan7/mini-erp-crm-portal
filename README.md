@@ -4,11 +4,11 @@ A full-stack internal operations tool that combines a lightweight **CRM** (custo
 follow-ups) with **ERP** functionality (products, live inventory, stock movements and
 sales challans) under role-based access.
 
-- **Backend** — Node.js 20+, Express 5, TypeScript, PostgreSQL 14, dependency injection,
+- **Backend:** Node.js 20+, Express 5, TypeScript, PostgreSQL 14, dependency injection,
   transactional business rules, Zod validation. `backend/`
-- **Frontend** — React 18, TypeScript, Vite, custom design system (no UI library),
+- **Frontend:** React 18, TypeScript, Vite, custom design system (no UI library),
   role-aware UI. `frontend/`
-- **Tests** — Vitest + Supertest against a disposable test database (54 tests).
+- **Tests:** Vitest + Supertest against a disposable test database (54 tests).
 
 > Live demo and links:
 >
@@ -27,7 +27,7 @@ sales challans) under role-based access.
 | **Authentication** | Login with JWT (8h expiry), session restore via `/auth/me`, route guards on both API and UI. |
 | **Roles** | `ADMIN`, `SALES`, `WAREHOUSE`, `ACCOUNTS`. Every write endpoint is role-checked server-side; the UI hides what a role cannot do. |
 | **Customers (CRM)** | CRUD, search + type/status filters, pagination, scheduled follow-up date, full follow-up timeline with notes. |
-| **Products (ERP)** | CRUD with unique SKU, opening stock, min-stock low-stock flag, category and storage location. Optional **product image** — uploaded to AWS S3 when configured, local disk otherwise. |
+| **Products (ERP)** | CRUD with unique SKU, opening stock, min-stock low-stock flag, category and storage location. Optional **product image**: uploaded to AWS S3 when configured, local disk otherwise. |
 | **Stock movements** | Adjust stock IN/OUT with a reason; every change is logged with who/when/reference; full movement history per product. |
 | **Sales challans** | Draft/confirm/cancel. Confirming **deducts stock atomically** (row locks + transaction); cancelling a confirmed challan restocks it. Line items store product **snapshots** (name, SKU, unit price) so history survives price/rename changes. |
 | **Invoice (PDF)** | Any challan exports a branded HTML/EJS **invoice** and a **PDF** (puppeteer-core + system Chromium) with customer billing/shipping blocks, GST line and grand total. |
@@ -46,7 +46,7 @@ sales challans) under role-based access.
 - **Images:** `multer` uploads + AWS SDK v3 S3 (local-disk fallback)
 - **Tests:** Vitest + Supertest
 - **Frontend:** React 18, React Router 7, Vite
-- **Hosting configs:** `render.yaml` (backend), `vercel.json` (frontend), Docker/`docker-compose.yml` (EC2), GitHub Actions CI + image build
+- **Hosting configs:** `docker-compose.yml` (EC2), GitHub Actions CI + image build
 
 ---
 
@@ -72,7 +72,6 @@ docs/              API reference, deployment guide, Postman collection
 frontend/          React + Vite SPA (design system, pages, API client)
 docker-compose.yml single compose file (dev + prod profiles)
 render.yaml        deploy config (backend, optional Postgres)
-vercel.json        deploy config (frontend)
 ```
 
 ---
@@ -90,7 +89,7 @@ vercel.json        deploy config (frontend)
 ```bash
 cd backend
 cp .env.example .env
-# edit .env — set DATABASE_URL, TEST_DATABASE_URL, JWT_SECRET, FRONTEND_URL
+# edit .env: set DATABASE_URL, TEST_DATABASE_URL, JWT_SECRET, FRONTEND_URL
 ```
 
 Required variables:
@@ -99,7 +98,7 @@ Required variables:
 | --- | --- | --- |
 | `DATABASE_URL` | `postgres://localhost:5432/crm_dev` | Main database |
 | `TEST_DATABASE_URL` | `postgres://localhost:5432/crm_test` | Used only by the test suite |
-| `JWT_SECRET` | long random string | Signs auth tokens — never commit the real value |
+| `JWT_SECRET` | long random string | Signs auth tokens (never commit the real value) |
 | `JWT_EXPIRES_IN` | `8h` | Token lifetime |
 | `FRONTEND_URL` | `http://localhost:5173` | CORS allow-list (comma-separated, spaces ok) |
 | `PORT` | `4000` | API port |
@@ -269,7 +268,7 @@ The suite automatically creates/refreshes isolation in a separate `crm_test` dat
 A full, copy-paste guided walkthrough for PostgreSQL provisioning (**Neon**) and the
 frontend/backend platforms is in `docs/deployment.md`. The repo also ships:
 
-- **Docker** — multi-stage `backend/Dockerfile` and `frontend/Dockerfile`, plus a **single
+- **Docker:** multi-stage `backend/Dockerfile` and `frontend/Dockerfile`, plus a **single
   `docker-compose.yml`** that runs both dev and production:
 
   ```bash
@@ -280,9 +279,9 @@ frontend/backend platforms is in `docs/deployment.md`. The repo also ships:
   docker compose --profile prod up -d --build # API :4000 + nginx :80
   ```
 
-- **EC2** — the production compose services are what you run on an EC2 VM (see
+- **EC2:** the production compose services are what you run on an EC2 VM (see
   `docs/deployment.md` §Docker & EC2).
-- **GitHub Actions** — `ci.yml` runs typecheck/tests/build on every push; `docker.yml`
+- **GitHub Actions:** `ci.yml` runs typecheck/tests/build on every push; `docker.yml`
   builds and pushes both images to GHCR.
 
 ---

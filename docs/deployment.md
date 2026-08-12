@@ -3,13 +3,11 @@
 You host three things:
 
 1. **PostgreSQL database** — provisioned on **Neon** (serverless Postgres).
-2. **API backend** — Node/Express on **Render** (`render.yaml` included) or a **Docker
-   container** on EC2 (`backend/Dockerfile`).
-3. **Frontend** — React/Vite on **Vercel** (`vercel.json` included) or an **nginx
-   container** on EC2 (`frontend/Dockerfile`).
+2. **API backend** — Node/Express as a **Docker container** on EC2 (`backend/Dockerfile`).
+3. **Frontend** — React/Vite as an **nginx container** on EC2 (`frontend/Dockerfile`).
 
-> Ports: Render serves the API on port **4000**; the Docker frontend serves the SPA on
-> port **80**. Vercel serves on 443. No manual port changes needed.
+> Ports: the backend container serves the API on port **4000**; the nginx frontend
+> serves the SPA on port **80/443** (TLS via Let's Encrypt). No manual port changes needed.
 
 ---
 
@@ -63,7 +61,7 @@ so you only ever seed the main Neon DB manually.
    | `TEST_DATABASE_URL` | Neon `crm_test` string |
    | `JWT_SECRET` | long random string (never reuse the dev one) |
    | `JWT_EXPIRES_IN` | `8h` |
-   | `FRONTEND_URL` | `https://<your-project>.vercel.app` (add more origins comma-separated) |
+   | `FRONTEND_URL` | `https://meridian.smayaan.me` (add more origins comma-separated) |
 
 3. Render runs `npm run build` then `npm start`. Health check hits `/health`.
 
@@ -80,23 +78,18 @@ curl -X POST https://<render-service>.onrender.com/auth/login \
 
 ---
 
-## 3. Deploy the frontend to Vercel
+## 3. Deploy the frontend
 
-`vercel.json` builds the SPA and rewrites unknown paths to `/` for client-side routing.
+The frontend ships as an **nginx container** (React/Vite SPA) through `docker-compose.yml`
+and is deployed together with the backend on EC2. The production nginx config
+(`frontend/nginx.conf`) serves the SPA with client-side routing fallback, proxies
+`/api` to the backend, and terminates HTTPS with a Let's Encrypt certificate (certs
+mounted from `./certs` on the host). See **section 6 (Deploy with Docker on EC2)** for
+the full setup.
 
-1. In Vercel: **Add New → Project**, import the same GitHub repo.
-2. **Root Directory:** `frontend`
-3. Framework preset: **Vite** (auto-detected).
-4. Environment variable:
-
-   | Key | Value |
-   | --- | --- |
-   | `VITE_API_URL` | `https://<render-service>.onrender.com` |
-
-   > In local dev there is no `VITE_API_URL`, so Vite proxies to `http://localhost:4000`.
-
-5. Deploy. Confirm the `_vercel.json` rewrite rules are applied for deep links like
-   `/customers/1` and `/challans/new`.
+> A `VITE_API_URL` is baked in at build time (`/api` by default), so the same build works
+> anywhere behind nginx. In local dev there is no `VITE_API_URL`, so Vite proxies to
+> `http://localhost:4000`.
 
 ---
 
@@ -115,7 +108,7 @@ credentials.
 
 ## 5. Smoke-test the live system
 
-1. Open the Vercel URL, sign in as `admin@crmportal.dev` / `Admin@123`.
+1. Open the live URL (`https://meridian.smayaan.me`), sign in as `admin@crmportal.dev` / `Admin@123`.
 2. Create a customer, add a follow-up.
 3. Add a product with opening stock, adjust stock IN/OUT; confirm the movement history.
 4. Create a challan (draft) → confirm it → verify product stock went down →
@@ -209,6 +202,5 @@ docker compose --profile dev up --build   # API :4000, SPA :5173, local Postgres
 | --- | --- | --- |
 | API returns 503 / render crashes | `DATABASE_URL` wrong or SSL | Use the `?sslmode=require` pooled string from Neon |
 | Login returns 401 | `JWT_SECRET` changed between boot | Redeploy after setting a stable secret |
-| Frontend shows network error | `VITE_API_URL` mismatch / CORS | Check `FRONTEND_URL` includes the Vercel origin and rerun frontend build |
-| Deep link 404s on Vercel | Rewrites missing | Confirm `vercel.json` rewrite to `/` is present |
+| Frontend shows network error | `VITE_API_URL` mismatch / CORS | Check `FRONTEND_URL` includes the live origin and rerun the frontend build |
 | Tests fail locally | test DB unreachable | Ensure `crm_test` exists and `TEST_DATABASE_URL` is correct |
