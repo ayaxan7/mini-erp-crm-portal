@@ -50,6 +50,44 @@ sales challans) under role-based access.
 
 ---
 
+## Architecture at a glance
+
+A single React SPA talks to one Express API; Postgres and S3 live in the cloud, and a
+Dockerized nginx container fronts everything in production.
+
+```
+                    ┌────────────────────────────┐
+Browser ───────────▶│ nginx (frontend :80/:443)   │
+                    │  serves SPA + TLS + proxies │
+                    └──────────────┬─────────────┘
+                                   │ /api (and /uploads)
+                    ┌──────────────▼─────────────┐
+                    │ Express API (backend :4000) │
+                    │  controllers → services →   │
+                    │  repositories (raw SQL)      │
+                    └──────┬───────────────┬──────┘
+                           │               │
+                    ┌──────▼──────┐   ┌────▼──────────────┐
+                    │ PostgreSQL   │   │ AWS S3            │
+                    │ (Neon, cloud)│   │ product images    │
+                    └─────────────┘   └───────────────────┘
+```
+
+- **Frontend (React + Vite):** role-aware UI; calls the API through `/api`, caches each
+  product image's short-lived presigned S3 URL.
+- **Backend (Express + TS):** thin `controllers`, business logic in `services`, raw-SQL
+  `repositories` that accept a `Queryable`, so a whole challan confirm (row locks +
+  stock deduction + log) runs in one transaction. Auth via JWT + `bcryptjs`;
+  input validated with Zod.
+- **Data:** PostgreSQL on Neon (serverless) for everything; AWS S3 for product images
+  (objects are private, delivered only via presigned URLs).
+- **Auth flow:** login returns a JWT stored in `localStorage`; every request sends
+  `Authorization: Bearer <token>`; `requireAuth`/`requireRole` enforce permissions
+  server-side and the UI hides actions a role cannot take.
+- **Production:** pre-built Docker images are published to Docker Hub; the backend
+  container runs the API plus a system Chromium for PDF invoices, nginx terminates
+  HTTPS (Let's Encrypt) and serves the SPA with client-side-route fallback.
+
 ## Repository layout
 
 ```
@@ -126,14 +164,14 @@ npm run db:setup
 npm run db:reset
 ```
 
-Seed accounts (all passwords end in `@123`):
+Seed accounts (demo credentials, usable anywhere the app runs):
 
-| Role | Email |
-| --- | --- |
-| Admin | `admin@crmportal.dev` |
-| Sales | `sales@crmportal.dev` |
-| Warehouse | `warehouse@crmportal.dev` |
-| Accounts | `accounts@crmportal.dev` |
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@crmportal.dev` | `Admin@123` |
+| Sales | `sales@crmportal.dev` | `Sales@123` |
+| Warehouse | `warehouse@crmportal.dev` | `Warehouse@123` |
+| Accounts | `accounts@crmportal.dev` | `Accounts@123` |
 
 The dev seed also adds 8 customers and 8 products with opening-stock movements.
 
@@ -312,6 +350,23 @@ docker compose --profile prod up -d
   builds and pushes both images to Docker Hub (`latest` for `main`, `dev` for `dev`).
 
 ---
+
+## Known limitations
+
+- **Not multi-tenant:** all users see the same shared customer/product/challan data;
+  there is no per-company or per-workspace isolation.
+- **PDFs need Chromium:** invoice PDF generation depends on a Chromium binary in the
+  runtime image. It is bundled in the Docker/EC2 deployment but must be configured
+  manually (via `PUPPETEER_EXECUTABLE_PATH`) when running from source.
+- **Email sending is minimal:** the "request access" flow and login do
+  not send automated emails; approved users receive the temporary password
+  on screen only.
+- **Image security trades convenience for freshness:** product images are private and
+  delivered via 15-minute signed URLs, which the client refreshes automatically, but
+  a URL copied from the browser becomes invalid after expiry.
+- **Dev-only storage fallback:** if AWS keys are not configured, uploaded images are
+  stored on the local disk of the server rather than S3, which is not durable across
+  instance rebuilds.
 
 ## Roadmap / future work
 
