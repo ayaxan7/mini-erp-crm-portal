@@ -279,17 +279,32 @@ frontend/backend platforms is in `docs/deployment.md`. The repo also ships:
   docker compose --profile prod up -d --build # API :4000 + nginx :80
   ```
 
-- **Pre-built images on Docker Hub** — every push to `main` publishes
-  `ayaxan7/crm-portal-backend:latest` and `ayaxan7/crm-portal-frontend:latest`
-  (pushes to `dev` use the `dev` tag; version tags use their own tag). Anyone can run
-  the portal without a local build:
+### Pre-built images on Docker Hub
 
-  ```bash
-  docker pull ayaxan7/crm-portal-backend:latest
-  docker pull ayaxan7/crm-portal-frontend:latest
-  # or pull them in one step via compose (requires the .env from §Deployment)
-  docker compose --profile prod up -d
-  ```
+Every push to `main` publishes ready-to-run images to Docker Hub
+(<https://hub.docker.com/u/ayaxan7>); pushes to `dev` publish a `dev` tag instead, so
+anyone can `docker pull` the build for the branch they want.
+
+| Image | Tag | Source |
+| --- | --- | --- |
+| `ayaxan7/crm-portal-backend` | `latest` | branch `main` |
+| `ayaxan7/crm-portal-frontend` | `latest` | branch `main` |
+| `ayaxan7/crm-portal-backend` | `dev` | branch `dev` |
+| `ayaxan7/crm-portal-frontend` | `dev` | branch `dev` |
+| both | `<sha>` | every push (immutable) |
+| both | `v…` | git tags (`v1.0.0`, …) |
+
+Run the portal without a local build:
+
+```bash
+docker pull ayaxan7/crm-portal-backend:latest
+docker pull ayaxan7/crm-portal-frontend:latest
+# or pull both in one step via compose (create the .env first, see docs/deployment.md §Prod)
+docker compose --profile prod up -d
+```
+
+> The images need the same runtime env as the repo (`DATABASE_URL`, `JWT_SECRET`,
+> optional `AWS_*` for S3 images); see the env table in §Configure the backend.
 
 - **EC2:** the production compose services are what you run on an EC2 VM (see
   `docs/deployment.md` §Docker & EC2).
