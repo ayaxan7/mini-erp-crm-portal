@@ -10,6 +10,14 @@ sales challans) under role-based access.
   role-aware UI. `frontend/`
 - **Tests** — Vitest + Supertest against a disposable test database (54 tests).
 
+> Live demo and links:
+>
+> - **Repository:** https://github.com/ayaxan7/mini-erp-crm-portal
+> - **Frontend:** https://meridian.smayaan.me
+> - **API base URL:** https://meridian.smayaan.me/api (served through the frontend's
+>   nginx; the backend container itself binds to port 4000 on the EC2 VM and is not
+>   exposed directly to the internet).
+
 ---
 
 ## Features
